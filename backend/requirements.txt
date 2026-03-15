@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+alembic
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart
+redis
+pydantic
+pydantic-settings
+weasyprint
+celery
+boto3
+sentry-sdk
