@@ -4,11 +4,13 @@ sqlalchemy
 psycopg2-binary
 alembic
 passlib[bcrypt]
+bcrypt==4.0.1
 python-jose[cryptography]
 python-multipart
 redis
-pydantic
+pydantic[email]
 pydantic-settings
+email-validator
 weasyprint
 celery
 boto3
