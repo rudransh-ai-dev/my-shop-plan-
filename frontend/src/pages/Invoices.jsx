@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, AlertCircle, FileText, Eye } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Trash2, AlertCircle, FileText, Eye, Search, ArrowDownAZ, ArrowUpZA, ChevronDown } from 'lucide-react';
 import client from '../api/client';
 
 const Invoices = () => {
@@ -20,6 +20,10 @@ const Invoices = () => {
     
     const [selectedProductId, setSelectedProductId] = useState('');
     const [selectedQuantity, setSelectedQuantity] = useState(1);
+    const [productSearch, setProductSearch] = useState('');
+    const [sortOrder, setSortOrder] = useState('az'); // 'az' or 'za'
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
     
     const fetchData = async () => {
         try {
@@ -42,6 +46,26 @@ const Invoices = () => {
     useEffect(() => {
         fetchData();
     }, []);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+                setDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const filteredProducts = products
+        .filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.sku?.toLowerCase().includes(productSearch.toLowerCase()))
+        .sort((a, b) => sortOrder === 'az'
+            ? a.name.localeCompare(b.name)
+            : b.name.localeCompare(a.name)
+        );
+
+    const selectedProduct = products.find(p => p.id === parseInt(selectedProductId));
 
     const handleAddItem = () => {
         if (!selectedProductId) return;
@@ -230,25 +254,76 @@ const Invoices = () => {
                                     
                                     {/* Add Item Row */}
                                     <div className="flex flex-col md:flex-row gap-3 mb-4 items-end">
-                                        <div className="flex-1">
-                                            <label className="block text-sm font-medium text-slate-700">Product</label>
-                                            <select 
-                                                value={selectedProductId}
-                                                onChange={(e) => setSelectedProductId(e.target.value)}
-                                                className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                            >
-                                                <option value="">Select a product...</option>
-                                                {products.map(p => (
-                                                    <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock} | ₹{p.selling_price})</option>
-                                                ))}
-                                            </select>
+                                        <div className="flex-1" ref={dropdownRef}>
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">Product</label>
+
+                                            {/* Search + Sort bar */}
+                                            <div className="flex gap-2 mb-2">
+                                                <div className="relative flex-1">
+                                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Search by name or SKU..."
+                                                        value={productSearch}
+                                                        onChange={(e) => { setProductSearch(e.target.value); setDropdownOpen(true); }}
+                                                        onFocus={() => setDropdownOpen(true)}
+                                                        className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSortOrder(s => s === 'az' ? 'za' : 'az')}
+                                                    title={sortOrder === 'az' ? 'Sorted A→Z (click for Z→A)' : 'Sorted Z→A (click for A→Z)'}
+                                                    className="flex items-center gap-1 px-3 py-2 border border-slate-300 rounded-md bg-white hover:bg-slate-50 text-sm font-medium text-slate-600 transition"
+                                                >
+                                                    {sortOrder === 'az' ? <ArrowDownAZ className="h-4 w-4" /> : <ArrowUpZA className="h-4 w-4" />}
+                                                    {sortOrder === 'az' ? 'A→Z' : 'Z→A'}
+                                                </button>
+                                            </div>
+
+                                            {/* Custom dropdown trigger */}
+                                            <div className="relative">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setDropdownOpen(o => !o)}
+                                                    className="w-full flex items-center justify-between border border-slate-300 rounded-md py-2 px-3 bg-white text-sm text-left focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                >
+                                                    <span className={selectedProduct ? 'text-slate-900' : 'text-slate-400'}>
+                                                        {selectedProduct
+                                                            ? `${selectedProduct.name} (Stock: ${selectedProduct.stock} | ₹${selectedProduct.selling_price})`
+                                                            : 'Select a product...'}
+                                                    </span>
+                                                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                                                </button>
+
+                                                {dropdownOpen && (
+                                                    <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-md shadow-lg max-h-56 overflow-y-auto">
+                                                        {filteredProducts.length === 0 ? (
+                                                            <div className="px-4 py-3 text-sm text-slate-400">No products found.</div>
+                                                        ) : (
+                                                            filteredProducts.map(p => (
+                                                                <div
+                                                                    key={p.id}
+                                                                    onClick={() => { setSelectedProductId(String(p.id)); setDropdownOpen(false); setProductSearch(''); }}
+                                                                    className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-indigo-50 hover:text-indigo-700 flex justify-between items-center ${
+                                                                        String(selectedProductId) === String(p.id) ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700'
+                                                                    }`}
+                                                                >
+                                                                    <span>{p.name}</span>
+                                                                    <span className="text-xs text-slate-400 ml-2">Stock: {p.stock} | ₹{p.selling_price}</span>
+                                                                </div>
+                                                            ))
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="w-24">
                                             <label className="block text-sm font-medium text-slate-700">Qty</label>
                                             <input type="number" min="1" value={selectedQuantity} onChange={(e) => setSelectedQuantity(e.target.value)} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
                                         </div>
-                                        <button 
-                                            type="button" 
+                                        <button
+                                            type="button"
                                             onClick={handleAddItem}
                                             className="bg-slate-800 text-white px-4 py-2 rounded-md hover:bg-slate-700 text-sm font-medium transition"
                                         >

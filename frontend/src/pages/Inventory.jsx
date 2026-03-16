@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, PackagePlus, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, PackagePlus, AlertCircle, Search, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
 import client from '../api/client';
 
 const Inventory = () => {
@@ -28,6 +28,10 @@ const Inventory = () => {
         movement_type: 'adjustment',
         remarks: ''
     });
+
+    // Search & Sort
+    const [search, setSearch] = useState('');
+    const [sortOrder, setSortOrder] = useState('az');
 
     const fetchProducts = async () => {
         try {
@@ -155,6 +159,38 @@ const Inventory = () => {
                 </div>
             )}
 
+            {/* Search + Sort Bar */}
+            <div className="flex gap-3 mb-4 items-center">
+                <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                    <input
+                        type="text"
+                        placeholder="Search by name, SKU or HSN..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setSortOrder(s => s === 'az' ? 'za' : 'az')}
+                    title={sortOrder === 'az' ? 'Sorted A→Z (click for Z→A)' : 'Sorted Z→A (click for A→Z)'}
+                    className="flex items-center gap-1.5 px-3 py-2 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 text-sm font-medium text-slate-600 transition"
+                >
+                    {sortOrder === 'az' ? <ArrowDownAZ className="h-4 w-4" /> : <ArrowUpZA className="h-4 w-4" />}
+                    {sortOrder === 'az' ? 'A→Z' : 'Z→A'}
+                </button>
+                {search && (
+                    <span className="text-xs text-slate-500">
+                        {products.filter(p =>
+                            p.name.toLowerCase().includes(search.toLowerCase()) ||
+                            p.sku?.toLowerCase().includes(search.toLowerCase()) ||
+                            p.hsn_code?.toLowerCase().includes(search.toLowerCase())
+                        ).length} result(s)
+                    </span>
+                )}
+            </div>
+
             {/* Products Table */}
             <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
                 <div className="overflow-x-auto">
@@ -179,33 +215,43 @@ const Inventory = () => {
                                     <td colSpan="6" className="px-6 py-8 text-center text-slate-500">No products found. Click "Add Product" to get started.</td>
                                 </tr>
                             ) : (
-                                products.map((product) => (
-                                    <tr key={product.id} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{product.sku}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                            <div className="font-medium text-slate-900">{product.name}</div>
-                                            <div className="text-xs text-slate-400">HSN: {product.hsn_code || 'N/A'}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.stock <= 5 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                                                {product.stock}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-right">₹{product.selling_price.toFixed(2)}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-right">{product.gst_rate}%</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button onClick={() => openStockModal(product)} className="text-emerald-600 hover:text-emerald-900 mx-2" title="Adjust Stock">
-                                                <PackagePlus className="h-4 w-4 inline" />
-                                            </button>
-                                            <button onClick={() => openEditModal(product)} className="text-indigo-600 hover:text-indigo-900 mx-2" title="Edit Product">
-                                                <Edit2 className="h-4 w-4 inline" />
-                                            </button>
-                                            <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-900 mx-2" title="Delete Product">
-                                                <Trash2 className="h-4 w-4 inline" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
+                                products
+                                    .filter(p =>
+                                        p.name.toLowerCase().includes(search.toLowerCase()) ||
+                                        p.sku?.toLowerCase().includes(search.toLowerCase()) ||
+                                        p.hsn_code?.toLowerCase().includes(search.toLowerCase())
+                                    )
+                                    .sort((a, b) => sortOrder === 'az'
+                                        ? a.name.localeCompare(b.name)
+                                        : b.name.localeCompare(a.name)
+                                    )
+                                    .map((product) => (
+                                        <tr key={product.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{product.sku}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                                <div className="font-medium text-slate-900">{product.name}</div>
+                                                <div className="text-xs text-slate-400">HSN: {product.hsn_code || 'N/A'}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.stock <= 5 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                                                    {product.stock}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-right">₹{product.selling_price.toFixed(2)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-right">{product.gst_rate}%</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button onClick={() => openStockModal(product)} className="text-emerald-600 hover:text-emerald-900 mx-2" title="Adjust Stock">
+                                                    <PackagePlus className="h-4 w-4 inline" />
+                                                </button>
+                                                <button onClick={() => openEditModal(product)} className="text-indigo-600 hover:text-indigo-900 mx-2" title="Edit Product">
+                                                    <Edit2 className="h-4 w-4 inline" />
+                                                </button>
+                                                <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-900 mx-2" title="Delete Product">
+                                                    <Trash2 className="h-4 w-4 inline" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
                             )}
                         </tbody>
                     </table>
