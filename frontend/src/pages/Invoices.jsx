@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, AlertCircle, FileText, Eye, Search, ArrowDownAZ, ArrowUpZA, ChevronDown } from 'lucide-react';
 import client from '../api/client';
+import { useTheme } from '../context/ThemeContext';
 
 const Invoices = () => {
+    const { darkMode } = useTheme();
     const [invoices, setInvoices] = useState([]);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -11,19 +13,22 @@ const Invoices = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [viewInvoice, setViewInvoice] = useState(null);
 
-    // Form state
-    const [formData, setFormData] = useState({
-        customer_name: '',
-        customer_gstin: '',
-    });
+    const [formData, setFormData] = useState({ customer_name: '', customer_gstin: '' });
     const [items, setItems] = useState([]);
-    
     const [selectedProductId, setSelectedProductId] = useState('');
     const [selectedQuantity, setSelectedQuantity] = useState(1);
     const [productSearch, setProductSearch] = useState('');
-    const [sortOrder, setSortOrder] = useState('az'); // 'az' or 'za'
+    const [sortOrder, setSortOrder] = useState('az');
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
+
+    const cardClass = darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-slate-200';
+    const textPrimary = darkMode ? 'text-gray-100' : 'text-slate-900';
+    const textSecondary = darkMode ? 'text-gray-400' : 'text-slate-500';
+    const textMuted = darkMode ? 'text-gray-500' : 'text-slate-400';
+    const inputClass = darkMode
+        ? 'bg-gray-800 border-gray-700 text-gray-200 focus:ring-indigo-500 focus:border-indigo-500'
+        : 'border-slate-300 text-slate-900 focus:ring-indigo-500 focus:border-indigo-500';
     
     const fetchData = async () => {
         try {
@@ -43,11 +48,8 @@ const Invoices = () => {
         }
     };
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    useEffect(() => { fetchData(); }, []);
 
-    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -60,10 +62,7 @@ const Invoices = () => {
 
     const filteredProducts = products
         .filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.sku?.toLowerCase().includes(productSearch.toLowerCase()))
-        .sort((a, b) => sortOrder === 'az'
-            ? a.name.localeCompare(b.name)
-            : b.name.localeCompare(a.name)
-        );
+        .sort((a, b) => sortOrder === 'az' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
 
     const selectedProduct = products.find(p => p.id === parseInt(selectedProductId));
 
@@ -71,13 +70,10 @@ const Invoices = () => {
         if (!selectedProductId) return;
         const product = products.find(p => p.id === parseInt(selectedProductId));
         if (!product) return;
-
         if (product.stock < selectedQuantity) {
             alert(`Insufficient stock. Only ${product.stock} available.`);
             return;
         }
-
-        // Add to items list if not already there, else update quantity
         const existingItemIndex = items.findIndex(i => i.product_id === product.id);
         if (existingItemIndex >= 0) {
             const newItems = [...items];
@@ -91,27 +87,16 @@ const Invoices = () => {
                 unit_price: product.selling_price,
             }]);
         }
-        
         setSelectedProductId('');
         setSelectedQuantity(1);
     };
 
-    const handleRemoveItem = (index) => {
-        const newItems = items.filter((_, i) => i !== index);
-        setItems(newItems);
-    };
-
-    const handleFormChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+    const handleRemoveItem = (index) => setItems(items.filter((_, i) => i !== index));
+    const handleFormChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (items.length === 0) {
-            alert('Please add at least one item to the invoice.');
-            return;
-        }
-
+        if (items.length === 0) { alert('Please add at least one item.'); return; }
         const payload = {
             customer_name: formData.customer_name,
             customer_gstin: formData.customer_gstin || null,
@@ -119,10 +104,9 @@ const Invoices = () => {
                 product_id: i.product_id,
                 quantity: i.quantity,
                 unit_price: i.unit_price,
-                total: i.quantity * i.unit_price // Server calculates GST, this is just base amount hint
+                total: i.quantity * i.unit_price
             }))
         };
-
         try {
             await client.post('/invoices/', payload);
             setIsCreateModalOpen(false);
@@ -134,84 +118,69 @@ const Invoices = () => {
         }
     };
 
-    const calculateCartTotal = () => {
-        return items.reduce((total, item) => total + (item.quantity * item.unit_price), 0);
-    };
+    const calculateCartTotal = () => items.reduce((total, item) => total + (item.quantity * item.unit_price), 0);
 
     return (
-        <div className="relative">
-            <div className="md:flex md:items-center md:justify-between pb-6 border-b border-slate-200 mb-8">
+        <div className="relative pb-8">
+            <div className={`md:flex md:items-center md:justify-between pb-6 border-b mb-8`}
+                style={{ borderColor: darkMode ? '#1e293b' : '#e2e8f0' }}>
                 <div className="flex-1 min-w-0">
-                    <h2 className="text-2xl font-bold leading-7 text-slate-900 sm:text-3xl sm:truncate">
-                        Invoices
-                    </h2>
-                    <p className="mt-1 text-sm text-slate-500">
-                        Create invoices, calculate GST automatically, and track payments.
-                    </p>
+                    <h2 className={`text-2xl font-bold leading-7 sm:text-3xl sm:truncate ${textPrimary}`}>Invoices</h2>
+                    <p className={`mt-1 text-sm ${textSecondary}`}>Create invoices, calculate GST automatically, and track payments.</p>
                 </div>
                 <div className="mt-4 flex md:mt-0 md:ml-4">
-                    <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        type="button"
-                        className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition"
-                    >
-                        <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                        Create Invoice
+                    <button onClick={() => setIsCreateModalOpen(true)} className="ml-3 inline-flex items-center px-4 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-all">
+                        <Plus className="-ml-1 mr-2 h-5 w-5" /> Create Invoice
                     </button>
                 </div>
             </div>
 
             {error && (
-                <div className="mb-4 bg-red-50 p-4 rounded-md flex items-center text-red-700">
-                    <AlertCircle className="h-5 w-5 mr-2" />
-                    {error}
+                <div className="mb-4 bg-red-500/10 border border-red-500/20 p-4 rounded-xl flex items-center text-red-500">
+                    <AlertCircle className="h-5 w-5 mr-2" /> {error}
                 </div>
             )}
 
             {/* Invoices List */}
-            <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
+            <div className={`shadow-sm rounded-xl border overflow-hidden ${cardClass}`}>
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-200">
-                        <thead className="bg-slate-50">
+                    <table className={`min-w-full divide-y ${darkMode ? 'divide-gray-800' : 'divide-slate-200'}`}>
+                        <thead className={darkMode ? 'bg-gray-800/50' : 'bg-slate-50'}>
                             <tr>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Invoice #</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Customer</th>
-                                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Total Amount</th>
-                                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${textSecondary}`}>Invoice #</th>
+                                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${textSecondary}`}>Date</th>
+                                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${textSecondary}`}>Customer</th>
+                                <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${textSecondary}`}>Total Amount</th>
+                                <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${textSecondary}`}>Status</th>
+                                <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${textSecondary}`}>Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-slate-200">
+                        <tbody className={`divide-y ${darkMode ? 'divide-gray-800' : 'divide-slate-200'}`}>
                             {loading ? (
-                                <tr>
-                                    <td colSpan="6" className="px-6 py-8 text-center text-slate-500">Loading invoices...</td>
-                                </tr>
+                                <tr><td colSpan="6" className={`px-6 py-8 text-center ${textSecondary}`}>Loading invoices...</td></tr>
                             ) : invoices.length === 0 ? (
-                                <tr>
-                                    <td colSpan="6" className="px-6 py-8 text-center text-slate-500">No invoices found. Generate one to get started.</td>
-                                </tr>
+                                <tr><td colSpan="6" className={`px-6 py-8 text-center ${textSecondary}`}>No invoices found.</td></tr>
                             ) : (
                                 invoices.map((invoice) => (
-                                    <tr key={invoice.id} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">{invoice.invoice_number}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                    <tr key={invoice.id} className={`transition-colors ${darkMode ? 'hover:bg-gray-800/50' : 'hover:bg-slate-50'}`}>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-500">{invoice.invoice_number}</td>
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${textSecondary}`}>
                                             {new Date(invoice.invoice_date).toLocaleDateString()}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                                            {invoice.customer_name}
-                                            {invoice.customer_gstin && <div className="text-xs text-slate-500">GSTIN: {invoice.customer_gstin}</div>}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                            <span className={textPrimary}>{invoice.customer_name}</span>
+                                            {invoice.customer_gstin && <div className={`text-xs ${textMuted}`}>GSTIN: {invoice.customer_gstin}</div>}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900 text-right">
-                                            ₹{invoice.total_amount.toFixed(2)}
-                                        </td>
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold text-right ${textPrimary}`}>₹{invoice.total_amount.toFixed(2)}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${invoice.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                invoice.status === 'paid' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
+                                            }`}>
                                                 {invoice.status.toUpperCase()}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button onClick={() => setViewInvoice(invoice)} className="text-indigo-600 hover:text-indigo-900" title="View Details">
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                            <button onClick={() => setViewInvoice(invoice)} className="text-indigo-500 hover:text-indigo-400 transition" title="View Details">
                                                 <Eye className="h-5 w-5 inline" />
                                             </button>
                                         </td>
@@ -225,142 +194,115 @@ const Invoices = () => {
 
             {/* Create Invoice Modal */}
             {isCreateModalOpen && (
-                <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                <div className="fixed inset-0 z-50 overflow-y-auto">
                     <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                        <div className="fixed inset-0 bg-slate-500 bg-opacity-75 transition-opacity" onClick={() => setIsCreateModalOpen(false)}></div>
-                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-                            <div className="bg-slate-50 px-4 py-4 border-b border-slate-200">
-                                <h3 className="text-lg leading-6 font-bold text-slate-900 flex items-center">
-                                    <FileText className="mr-2 h-5 w-5 text-indigo-600" />
-                                    Create New Invoice
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsCreateModalOpen(false)}></div>
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+                        <div className={`inline-block align-bottom rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full ${
+                            darkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white'
+                        }`}>
+                            <div className={`px-4 py-4 border-b ${darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'}`}>
+                                <h3 className={`text-lg font-bold flex items-center ${textPrimary}`}>
+                                    <FileText className="mr-2 h-5 w-5 text-indigo-500" /> Create New Invoice
                                 </h3>
                             </div>
-                            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 p-6">
+                            <div className={`px-4 pt-5 pb-4 sm:p-6 ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700">Customer Name</label>
-                                        <input type="text" name="customer_name" required value={formData.customer_name} onChange={handleFormChange} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                                        <label className={`block text-sm font-medium ${textSecondary}`}>Customer Name</label>
+                                        <input type="text" name="customer_name" required value={formData.customer_name} onChange={handleFormChange} className={`mt-1 block w-full border rounded-lg shadow-sm py-2 px-3 sm:text-sm ${inputClass}`} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700">Customer GSTIN (Optional)</label>
-                                        <input type="text" name="customer_gstin" value={formData.customer_gstin} onChange={handleFormChange} placeholder="e.g. 27AAAAA0000A1Z5" className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm uppercase" />
-                                        <p className="text-xs text-slate-500 mt-1">If same state as yours, applies CGST/SGST. If different, applies IGST.</p>
+                                        <label className={`block text-sm font-medium ${textSecondary}`}>Customer GSTIN (Optional)</label>
+                                        <input type="text" name="customer_gstin" value={formData.customer_gstin} onChange={handleFormChange} placeholder="e.g. 27AAAAA0000A1Z5" className={`mt-1 block w-full border rounded-lg shadow-sm py-2 px-3 sm:text-sm uppercase ${inputClass}`} />
                                     </div>
                                 </div>
 
-                                <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 mb-6">
-                                    <h4 className="text-md font-semibold text-slate-800 mb-3">Line Items</h4>
+                                <div className={`border rounded-xl p-4 mb-6 ${darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'}`}>
+                                    <h4 className={`text-md font-semibold mb-3 ${textPrimary}`}>Line Items</h4>
                                     
-                                    {/* Add Item Row */}
                                     <div className="flex flex-col md:flex-row gap-3 mb-4 items-end">
                                         <div className="flex-1" ref={dropdownRef}>
-                                            <label className="block text-sm font-medium text-slate-700 mb-1">Product</label>
-
-                                            {/* Search + Sort bar */}
+                                            <label className={`block text-sm font-medium mb-1 ${textSecondary}`}>Product</label>
                                             <div className="flex gap-2 mb-2">
                                                 <div className="relative flex-1">
                                                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Search by name or SKU..."
-                                                        value={productSearch}
+                                                    <input type="text" placeholder="Search..." value={productSearch}
                                                         onChange={(e) => { setProductSearch(e.target.value); setDropdownOpen(true); }}
                                                         onFocus={() => setDropdownOpen(true)}
-                                                        className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                        className={`w-full pl-8 pr-3 py-2 border rounded-lg text-sm focus:outline-none ${inputClass}`}
                                                     />
                                                 </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setSortOrder(s => s === 'az' ? 'za' : 'az')}
-                                                    title={sortOrder === 'az' ? 'Sorted A→Z (click for Z→A)' : 'Sorted Z→A (click for A→Z)'}
-                                                    className="flex items-center gap-1 px-3 py-2 border border-slate-300 rounded-md bg-white hover:bg-slate-50 text-sm font-medium text-slate-600 transition"
-                                                >
-                                                    {sortOrder === 'az' ? <ArrowDownAZ className="h-4 w-4" /> : <ArrowUpZA className="h-4 w-4" />}
-                                                    {sortOrder === 'az' ? 'A→Z' : 'Z→A'}
-                                                </button>
                                             </div>
-
-                                            {/* Custom dropdown trigger */}
                                             <div className="relative">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setDropdownOpen(o => !o)}
-                                                    className="w-full flex items-center justify-between border border-slate-300 rounded-md py-2 px-3 bg-white text-sm text-left focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                >
-                                                    <span className={selectedProduct ? 'text-slate-900' : 'text-slate-400'}>
-                                                        {selectedProduct
-                                                            ? `${selectedProduct.name} (Stock: ${selectedProduct.stock} | ₹${selectedProduct.selling_price})`
-                                                            : 'Select a product...'}
+                                                <button type="button" onClick={() => setDropdownOpen(o => !o)}
+                                                    className={`w-full flex items-center justify-between border rounded-lg py-2 px-3 text-sm text-left focus:outline-none ${inputClass}`}>
+                                                    <span className={selectedProduct ? textPrimary : textMuted}>
+                                                        {selectedProduct ? `${selectedProduct.name} (Stock: ${selectedProduct.stock} | ₹${selectedProduct.selling_price})` : 'Select a product...'}
                                                     </span>
-                                                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                                                    <ChevronDown className="h-4 w-4" />
                                                 </button>
-
                                                 {dropdownOpen && (
-                                                    <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-md shadow-lg max-h-56 overflow-y-auto">
+                                                    <div className={`absolute z-50 mt-1 w-full border rounded-lg shadow-lg max-h-56 overflow-y-auto ${
+                                                        darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'
+                                                    }`}>
                                                         {filteredProducts.length === 0 ? (
-                                                            <div className="px-4 py-3 text-sm text-slate-400">No products found.</div>
-                                                        ) : (
-                                                            filteredProducts.map(p => (
-                                                                <div
-                                                                    key={p.id}
-                                                                    onClick={() => { setSelectedProductId(String(p.id)); setDropdownOpen(false); setProductSearch(''); }}
-                                                                    className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-indigo-50 hover:text-indigo-700 flex justify-between items-center ${
-                                                                        String(selectedProductId) === String(p.id) ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700'
-                                                                    }`}
-                                                                >
-                                                                    <span>{p.name}</span>
-                                                                    <span className="text-xs text-slate-400 ml-2">Stock: {p.stock} | ₹{p.selling_price}</span>
-                                                                </div>
-                                                            ))
-                                                        )}
+                                                            <div className={`px-4 py-3 text-sm ${textMuted}`}>No products found.</div>
+                                                        ) : filteredProducts.map(p => (
+                                                            <div key={p.id}
+                                                                onClick={() => { setSelectedProductId(String(p.id)); setDropdownOpen(false); setProductSearch(''); }}
+                                                                className={`px-4 py-2.5 text-sm cursor-pointer flex justify-between items-center transition ${
+                                                                    darkMode ? 'hover:bg-gray-700' : 'hover:bg-indigo-50 hover:text-indigo-700'
+                                                                } ${String(selectedProductId) === String(p.id) ? (darkMode ? 'bg-gray-700 text-indigo-400' : 'bg-indigo-50 text-indigo-700 font-medium') : ''}`}
+                                                            >
+                                                                <span>{p.name}</span>
+                                                                <span className={`text-xs ${textMuted}`}>Stock: {p.stock} | ₹{p.selling_price}</span>
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                         <div className="w-24">
-                                            <label className="block text-sm font-medium text-slate-700">Qty</label>
-                                            <input type="number" min="1" value={selectedQuantity} onChange={(e) => setSelectedQuantity(e.target.value)} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                                            <label className={`block text-sm font-medium ${textSecondary}`}>Qty</label>
+                                            <input type="number" min="1" value={selectedQuantity} onChange={(e) => setSelectedQuantity(e.target.value)}
+                                                className={`mt-1 block w-full border rounded-lg shadow-sm py-2 px-3 sm:text-sm ${inputClass}`} />
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={handleAddItem}
-                                            className="bg-slate-800 text-white px-4 py-2 rounded-md hover:bg-slate-700 text-sm font-medium transition"
-                                        >
+                                        <button type="button" onClick={handleAddItem}
+                                            className="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 text-sm font-medium transition dark:bg-indigo-600 dark:hover:bg-indigo-700">
                                             Add Item
                                         </button>
                                     </div>
 
-                                    {/* Items Table */}
                                     {items.length > 0 && (
-                                        <div className="mt-4 border border-slate-200 rounded-md overflow-hidden bg-white">
-                                            <table className="min-w-full divide-y divide-slate-200">
-                                                <thead className="bg-slate-100">
+                                        <div className={`mt-4 border rounded-lg overflow-hidden ${darkMode ? 'border-gray-700 bg-gray-900' : 'border-slate-200 bg-white'}`}>
+                                            <table className={`min-w-full divide-y ${darkMode ? 'divide-gray-800' : 'divide-slate-200'}`}>
+                                                <thead className={darkMode ? 'bg-gray-800' : 'bg-slate-100'}>
                                                     <tr>
-                                                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Item Name</th>
-                                                        <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Rate</th>
-                                                        <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Qty</th>
-                                                        <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Amount (Excl. GST)</th>
-                                                        <th className="px-4 py-2 text-center text-xs font-semibold text-slate-600"></th>
+                                                        <th className={`px-4 py-2 text-left text-xs font-semibold ${textSecondary}`}>Item</th>
+                                                        <th className={`px-4 py-2 text-right text-xs font-semibold ${textSecondary}`}>Rate</th>
+                                                        <th className={`px-4 py-2 text-right text-xs font-semibold ${textSecondary}`}>Qty</th>
+                                                        <th className={`px-4 py-2 text-right text-xs font-semibold ${textSecondary}`}>Amount</th>
+                                                        <th className="px-4 py-2 text-center text-xs font-semibold"></th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-slate-200">
+                                                <tbody className={`divide-y ${darkMode ? 'divide-gray-800' : 'divide-slate-200'}`}>
                                                     {items.map((it, idx) => (
                                                         <tr key={idx}>
-                                                            <td className="px-4 py-3 text-sm text-slate-900">{it.name}</td>
-                                                            <td className="px-4 py-3 text-sm text-slate-900 text-right">₹{it.unit_price.toFixed(2)}</td>
-                                                            <td className="px-4 py-3 text-sm text-slate-900 text-right">{it.quantity}</td>
-                                                            <td className="px-4 py-3 text-sm text-slate-900 text-right font-medium">₹{(it.quantity * it.unit_price).toFixed(2)}</td>
+                                                            <td className={`px-4 py-3 text-sm ${textPrimary}`}>{it.name}</td>
+                                                            <td className={`px-4 py-3 text-sm text-right ${textPrimary}`}>₹{it.unit_price.toFixed(2)}</td>
+                                                            <td className={`px-4 py-3 text-sm text-right ${textPrimary}`}>{it.quantity}</td>
+                                                            <td className={`px-4 py-3 text-sm text-right font-medium ${textPrimary}`}>₹{(it.quantity * it.unit_price).toFixed(2)}</td>
                                                             <td className="px-4 py-3 text-sm text-center">
-                                                                <button onClick={() => handleRemoveItem(idx)} className="text-red-500 hover:text-red-700">
+                                                                <button onClick={() => handleRemoveItem(idx)} className="text-red-500 hover:text-red-400">
                                                                     <Trash2 className="h-4 w-4" />
                                                                 </button>
                                                             </td>
                                                         </tr>
                                                     ))}
-                                                    <tr className="bg-slate-50">
-                                                        <td colSpan="3" className="px-4 py-3 text-sm font-bold text-slate-900 text-right">Base Total (pre-GST):</td>
-                                                        <td className="px-4 py-3 text-sm font-bold text-indigo-700 text-right">₹{calculateCartTotal().toFixed(2)}</td>
+                                                    <tr className={darkMode ? 'bg-gray-800' : 'bg-slate-50'}>
+                                                        <td colSpan="3" className={`px-4 py-3 text-sm font-bold text-right ${textPrimary}`}>Base Total:</td>
+                                                        <td className="px-4 py-3 text-sm font-bold text-indigo-500 text-right">₹{calculateCartTotal().toFixed(2)}</td>
                                                         <td></td>
                                                     </tr>
                                                 </tbody>
@@ -369,11 +311,15 @@ const Invoices = () => {
                                     )}
                                 </div>
                             </div>
-                            <div className="bg-slate-50 px-4 py-4 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg border-t border-slate-200">
-                                <button type="button" onClick={handleSubmit} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            <div className={`px-4 py-4 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-xl border-t ${
+                                darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
+                            }`}>
+                                <button type="button" onClick={handleSubmit} className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-6 py-2.5 bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition sm:ml-3 sm:w-auto sm:text-sm">
                                     Generate & Save Invoice
                                 </button>
-                                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                <button type="button" onClick={() => setIsCreateModalOpen(false)} className={`mt-3 w-full inline-flex justify-center rounded-lg border shadow-sm px-4 py-2.5 font-medium transition sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm ${
+                                    darkMode ? 'border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                }`}>
                                     Cancel
                                 </button>
                             </div>
@@ -384,50 +330,51 @@ const Invoices = () => {
 
             {/* View Invoice Modal */}
             {viewInvoice && (
-                <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                <div className="fixed inset-0 z-50 overflow-y-auto">
                     <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                        <div className="fixed inset-0 bg-slate-500 bg-opacity-75 transition-opacity" onClick={() => setViewInvoice(null)}></div>
-                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full p-8 border-t-8 border-t-indigo-600">
-                            
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setViewInvoice(null)}></div>
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+                        <div className={`inline-block align-bottom rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full p-8 border-t-4 border-t-indigo-600 ${
+                            darkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white'
+                        }`}>
                             <div className="flex justify-between items-start mb-8">
                                 <div>
-                                    <h2 className="text-3xl font-bold text-slate-800">INVOICE</h2>
-                                    <p className="text-slate-500 font-medium">{viewInvoice.invoice_number}</p>
+                                    <h2 className={`text-3xl font-bold ${textPrimary}`}>INVOICE</h2>
+                                    <p className={`font-medium ${textSecondary}`}>{viewInvoice.invoice_number}</p>
                                 </div>
                                 <div className="text-right">
-                                    <h4 className="font-bold text-slate-800 mb-1">Billed To:</h4>
-                                    <p className="text-slate-600">{viewInvoice.customer_name}</p>
-                                    {viewInvoice.customer_gstin && <p className="text-slate-600">GSTIN: {viewInvoice.customer_gstin}</p>}
-                                    <p className="text-slate-500 text-sm mt-2">Date: {new Date(viewInvoice.invoice_date).toLocaleDateString()}</p>
+                                    <h4 className={`font-bold mb-1 ${textPrimary}`}>Billed To:</h4>
+                                    <p className={textSecondary}>{viewInvoice.customer_name}</p>
+                                    {viewInvoice.customer_gstin && <p className={textSecondary}>GSTIN: {viewInvoice.customer_gstin}</p>}
+                                    <p className={`text-sm mt-2 ${textMuted}`}>Date: {new Date(viewInvoice.invoice_date).toLocaleDateString()}</p>
                                 </div>
                             </div>
 
-                            <div className="border border-slate-200 rounded-lg overflow-hidden mb-8">
-                                <table className="min-w-full divide-y divide-slate-200">
-                                    <thead className="bg-slate-50">
+                            <div className={`border rounded-xl overflow-hidden mb-8 ${darkMode ? 'border-gray-700' : 'border-slate-200'}`}>
+                                <table className={`min-w-full divide-y ${darkMode ? 'divide-gray-700' : 'divide-slate-200'}`}>
+                                    <thead className={darkMode ? 'bg-gray-800' : 'bg-slate-50'}>
                                         <tr>
-                                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Item</th>
-                                            <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600">Qty</th>
-                                            <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600">Rate</th>
-                                            <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600">CGST</th>
-                                            <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600">SGST</th>
-                                            <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600">IGST</th>
-                                            <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600">Total</th>
+                                            <th className={`px-4 py-3 text-left text-xs font-semibold ${textSecondary}`}>Item</th>
+                                            <th className={`px-4 py-3 text-right text-xs font-semibold ${textSecondary}`}>Qty</th>
+                                            <th className={`px-4 py-3 text-right text-xs font-semibold ${textSecondary}`}>Rate</th>
+                                            <th className={`px-4 py-3 text-right text-xs font-semibold ${textSecondary}`}>CGST</th>
+                                            <th className={`px-4 py-3 text-right text-xs font-semibold ${textSecondary}`}>SGST</th>
+                                            <th className={`px-4 py-3 text-right text-xs font-semibold ${textSecondary}`}>IGST</th>
+                                            <th className={`px-4 py-3 text-right text-xs font-semibold ${textSecondary}`}>Total</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-slate-200">
+                                    <tbody className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-slate-200'}`}>
                                         {viewInvoice.items && viewInvoice.items.map((item, idx) => {
                                             const product = products.find(p => p.id === item.product_id);
                                             return (
                                                 <tr key={idx}>
-                                                    <td className="px-4 py-3 text-sm font-medium text-slate-900">{product ? product.name : `Item #${item.product_id}`}</td>
-                                                    <td className="px-4 py-3 text-sm text-slate-600 text-right">{item.quantity}</td>
-                                                    <td className="px-4 py-3 text-sm text-slate-600 text-right">₹{item.unit_price.toFixed(2)}</td>
-                                                    <td className="px-4 py-3 text-sm text-slate-600 text-right">₹{item.cgst.toFixed(2)}</td>
-                                                    <td className="px-4 py-3 text-sm text-slate-600 text-right">₹{item.sgst.toFixed(2)}</td>
-                                                    <td className="px-4 py-3 text-sm text-slate-600 text-right">₹{item.igst.toFixed(2)}</td>
-                                                    <td className="px-4 py-3 text-sm font-bold text-slate-900 text-right">₹{item.total.toFixed(2)}</td>
+                                                    <td className={`px-4 py-3 text-sm font-medium ${textPrimary}`}>{product ? product.name : `Item #${item.product_id}`}</td>
+                                                    <td className={`px-4 py-3 text-sm text-right ${textSecondary}`}>{item.quantity}</td>
+                                                    <td className={`px-4 py-3 text-sm text-right ${textSecondary}`}>₹{item.unit_price.toFixed(2)}</td>
+                                                    <td className={`px-4 py-3 text-sm text-right ${textSecondary}`}>₹{item.cgst.toFixed(2)}</td>
+                                                    <td className={`px-4 py-3 text-sm text-right ${textSecondary}`}>₹{item.sgst.toFixed(2)}</td>
+                                                    <td className={`px-4 py-3 text-sm text-right ${textSecondary}`}>₹{item.igst.toFixed(2)}</td>
+                                                    <td className={`px-4 py-3 text-sm font-bold text-right ${textPrimary}`}>₹{item.total.toFixed(2)}</td>
                                                 </tr>
                                             );
                                         })}
@@ -436,14 +383,16 @@ const Invoices = () => {
                             </div>
 
                             <div className="flex justify-end">
-                                <div className="w-64 bg-slate-50 p-4 rounded-lg flex justify-between items-center border border-slate-200">
-                                    <span className="font-bold text-slate-700">Grand Total:</span>
-                                    <span className="text-2xl font-bold text-indigo-700">₹{viewInvoice.total_amount.toFixed(2)}</span>
+                                <div className={`w-64 p-4 rounded-xl flex justify-between items-center border ${
+                                    darkMode ? 'bg-gray-800 border-gray-700' : 'bg-slate-50 border-slate-200'
+                                }`}>
+                                    <span className={`font-bold ${textSecondary}`}>Grand Total:</span>
+                                    <span className="text-2xl font-bold text-indigo-500">₹{viewInvoice.total_amount.toFixed(2)}</span>
                                 </div>
                             </div>
 
                             <div className="mt-8 flex justify-end">
-                                <button onClick={() => setViewInvoice(null)} className="px-6 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700 transition">
+                                <button onClick={() => setViewInvoice(null)} className="px-6 py-2.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition dark:bg-indigo-600 dark:hover:bg-indigo-700">
                                     Close Receipt
                                 </button>
                             </div>

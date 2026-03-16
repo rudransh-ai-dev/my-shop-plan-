@@ -24,6 +24,7 @@ class ProductBase(BaseModel):
     purchase_price: float = 0.0
     selling_price: float = 0.0
     stock: int = 0
+    store_room_stock: int = 0
     gst_rate: float = 0.0
     hsn_code: Optional[str] = None
     supplier: Optional[str] = None
@@ -49,6 +50,7 @@ class ProductResponse(ProductBase):
     id: int
     company_id: int
     is_active: bool
+    total_sold: int = 0
     created_at: datetime
     
     class Config:

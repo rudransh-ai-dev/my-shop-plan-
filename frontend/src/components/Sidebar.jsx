@@ -5,23 +5,30 @@ import {
   Package, 
   FileText, 
   Clock, 
-  Settings, 
-  LogOut 
+  LogOut,
+  Warehouse 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
   { name: 'Inventory', href: '/inventory', icon: Package },
+  { name: 'Store Room', href: '/storeroom', icon: Warehouse },
   { name: 'Invoices', href: '/invoices', icon: FileText },
   { name: 'GST Reports', href: '/reports', icon: Clock },
 ];
 
 const Sidebar = () => {
     const { logout } = useAuth();
+    const { darkMode } = useTheme();
     
     return (
-        <div className="flex flex-col w-64 bg-slate-900 border-r border-slate-800 text-slate-300">
+        <div className={`flex flex-col w-64 border-r transition-colors duration-300 ${
+            darkMode 
+                ? 'bg-gray-900 border-gray-800 text-gray-300' 
+                : 'bg-slate-900 border-slate-800 text-slate-300'
+        }`}>
             <div className="flex h-16 shrink-0 items-center px-6">
                 <span className="text-xl font-bold tracking-tight text-white">BusinessHub</span>
             </div>
@@ -32,10 +39,12 @@ const Sidebar = () => {
                             key={item.name}
                             to={item.href}
                             className={({ isActive }) =>
-                                `group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                                `group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                                     isActive
-                                        ? 'bg-indigo-600 text-white shadow-sm'
-                                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                                        : darkMode
+                                            ? 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                 }`
                             }
                         >
@@ -48,11 +57,17 @@ const Sidebar = () => {
                     ))}
                 </nav>
             </div>
-            <div className="flex flex-shrink-0 border-t border-slate-800 p-4">
+            <div className={`flex flex-shrink-0 border-t p-4 ${
+                darkMode ? 'border-gray-800' : 'border-slate-800'
+            }`}>
                 <div className="flex w-full items-center mb-1">
                      <button
                         onClick={logout}
-                        className="group flex w-full items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+                        className={`group flex w-full items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                            darkMode
+                                ? 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        }`}
                      >
                         <LogOut className="mr-3 flex-shrink-0 h-5 w-5" />
                         Logout

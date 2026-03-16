@@ -74,15 +74,35 @@ def update_stock(product_id: int, stock_update: StockUpdate, db: Session = Depen
     
     if not db_product:
         raise HTTPException(status_code=404, detail="Product not found")
+    
+    movement_type = stock_update.movement_type.value if hasattr(stock_update.movement_type, 'value') else stock_update.movement_type
         
-    if stock_update.movement_type == "sale":
+    if movement_type == "sale":
         if db_product.stock < stock_update.quantity:
-            raise HTTPException(status_code=400, detail="Insufficient stock")
+            raise HTTPException(status_code=400, detail="Insufficient shop shelf stock")
         db_product.stock -= stock_update.quantity
-    elif stock_update.movement_type == "purchase":
+        db_product.total_sold = (db_product.total_sold or 0) + stock_update.quantity
+    elif movement_type == "purchase":
         db_product.stock += stock_update.quantity
-    elif stock_update.movement_type == "adjustment":
-        # Adjustment can be positive or negative
+    elif movement_type == "adjustment":
+        db_product.stock += stock_update.quantity
+    elif movement_type == "move_to_shop":
+        # Move from store room to shop shelf
+        if (db_product.store_room_stock or 0) < stock_update.quantity:
+            raise HTTPException(status_code=400, detail="Insufficient store room stock")
+        db_product.store_room_stock = (db_product.store_room_stock or 0) - stock_update.quantity
+        db_product.stock += stock_update.quantity
+    elif movement_type == "move_to_store":
+        # Move from shop shelf to store room
+        if db_product.stock < stock_update.quantity:
+            raise HTTPException(status_code=400, detail="Insufficient shop shelf stock")
+        db_product.stock -= stock_update.quantity
+        db_product.store_room_stock = (db_product.store_room_stock or 0) + stock_update.quantity
+    elif movement_type == "restock_store":
+        # Supplier restocks store room
+        db_product.store_room_stock = (db_product.store_room_stock or 0) + stock_update.quantity
+    elif movement_type == "restock_shop":
+        # Supplier restocks shop directly
         db_product.stock += stock_update.quantity
         
     # Record movement
@@ -90,7 +110,7 @@ def update_stock(product_id: int, stock_update: StockUpdate, db: Session = Depen
         company_id=company_id,
         product_id=product_id,
         quantity=stock_update.quantity,
-        movement_type=stock_update.movement_type.value,
+        movement_type=movement_type,
         remarks=stock_update.remarks
     )
     db.add(movement)

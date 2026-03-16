@@ -37,7 +37,9 @@ class Product(BaseModel):
     name = Column(String, index=True)
     purchase_price = Column(Float, default=0.0)
     selling_price = Column(Float, default=0.0)
-    stock = Column(Integer, default=0)
+    stock = Column(Integer, default=0)  # Shop shelf stock
+    store_room_stock = Column(Integer, default=0, server_default="0")  # Store room stock
+    total_sold = Column(Integer, default=0, server_default="0")  # Total units sold
     gst_rate = Column(Float, default=0.0)
     hsn_code = Column(String, nullable=True)
     supplier = Column(String, nullable=True)
@@ -77,6 +79,10 @@ class StockMovementType(str, enum.Enum):
     SALE = "sale"
     PURCHASE = "purchase"
     ADJUSTMENT = "adjustment"
+    MOVE_TO_SHOP = "move_to_shop"
+    MOVE_TO_STORE = "move_to_store"
+    RESTOCK_STORE = "restock_store"
+    RESTOCK_SHOP = "restock_shop"
 
 class StockMovement(BaseModel):
     __tablename__ = "stock_movements"
