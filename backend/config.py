@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     
     # Redis (Rate Limiting, Caching, Celery)
     REDIS_URL: str = "redis://localhost:6379/0"
+
+    # Development-only fallback (do not enable in production)
+    ALLOW_INSECURE_TENANT_HEADER: bool = False
     
     # Sentry & AWS/MinIO (Optional)
     SENTRY_DSN: str | None = None

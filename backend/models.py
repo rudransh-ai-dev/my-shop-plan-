@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, Enum
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Enum, Numeric
 from sqlalchemy.orm import relationship
 from backend.database import Base
 from datetime import datetime
@@ -8,6 +8,9 @@ class BaseModel(Base):
     __abstract__ = True
     id = Column(Integer, primary_key=True, index=True)
     is_active = Column(Boolean, default=True)
+    # Soft delete for audit safety (never hard delete business data)
+    is_deleted = Column(Boolean, default=False, server_default="false", index=True)
+    deleted_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -35,12 +38,12 @@ class Product(BaseModel):
     company_id = Column(Integer, ForeignKey("companies.id"), index=True)
     sku = Column(String, index=True)
     name = Column(String, index=True)
-    purchase_price = Column(Float, default=0.0)
-    selling_price = Column(Float, default=0.0)
+    purchase_price = Column(Numeric(12, 2), default=0)
+    selling_price = Column(Numeric(12, 2), default=0)
     stock = Column(Integer, default=0)  # Shop shelf stock
     store_room_stock = Column(Integer, default=0, server_default="0")  # Store room stock
     total_sold = Column(Integer, default=0, server_default="0")  # Total units sold
-    gst_rate = Column(Float, default=0.0)
+    gst_rate = Column(Numeric(5, 2), default=0)
     hsn_code = Column(String, nullable=True)
     supplier = Column(String, nullable=True)
 
@@ -57,7 +60,7 @@ class Invoice(BaseModel):
     customer_name = Column(String)
     customer_gstin = Column(String, nullable=True)
     invoice_date = Column(DateTime, default=datetime.utcnow, index=True)
-    total_amount = Column(Float, default=0.0)
+    total_amount = Column(Numeric(12, 2), default=0)
     status = Column(String, default=InvoiceStatus.DRAFT.value)
     
     items = relationship("InvoiceItem", back_populates="invoice")
@@ -67,11 +70,11 @@ class InvoiceItem(BaseModel):
     invoice_id = Column(Integer, ForeignKey("invoices.id"), index=True)
     product_id = Column(Integer, ForeignKey("products.id"))
     quantity = Column(Integer, default=1)
-    unit_price = Column(Float)
-    cgst = Column(Float, default=0.0)
-    sgst = Column(Float, default=0.0)
-    igst = Column(Float, default=0.0)
-    total = Column(Float)
+    unit_price = Column(Numeric(12, 2))
+    cgst = Column(Numeric(12, 2), default=0)
+    sgst = Column(Numeric(12, 2), default=0)
+    igst = Column(Numeric(12, 2), default=0)
+    total = Column(Numeric(12, 2))
     
     invoice = relationship("Invoice", back_populates="items")
 
@@ -98,3 +101,13 @@ class AuditLog(BaseModel):
     user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=True)
     action = Column(String, index=True)  # e.g., "LOGIN", "CREATE_INVOICE"
     details = Column(Text)
+
+class IdempotencyKey(BaseModel):
+    __tablename__ = "idempotency_keys"
+    company_id = Column(Integer, ForeignKey("companies.id"), index=True)
+    key = Column(String, index=True)
+    # e.g. "POST:/api/v1/invoices/"
+    endpoint = Column(String, index=True)
+    request_hash = Column(String, nullable=True)
+    response_status = Column(Integer, nullable=True)
+    response_body = Column(Text, nullable=True)

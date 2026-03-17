@@ -12,7 +12,7 @@ router = APIRouter()
 def get_company_id():
     company_id = get_current_company_id()
     if not company_id:
-        raise HTTPException(status_code=400, detail="X-Company-ID header is missing")
+        raise HTTPException(status_code=401, detail="Not authenticated")
     return company_id
 
 @router.get("/metrics")
@@ -57,6 +57,7 @@ def get_dashboard_metrics(
     # Daily Sales (always today)
     daily_sales = db.query(func.sum(Invoice.total_amount)).filter(
         Invoice.company_id == company_id,
+        Invoice.is_deleted == False,
         Invoice.created_at >= today_start
     ).scalar() or 0.0
 
@@ -64,12 +65,14 @@ def get_dashboard_metrics(
     month_start = datetime(now.year, now.month, 1)
     monthly_revenue = db.query(func.sum(Invoice.total_amount)).filter(
         Invoice.company_id == company_id,
+        Invoice.is_deleted == False,
         Invoice.created_at >= month_start
     ).scalar() or 0.0
 
     # Filtered Revenue (based on date range selection)
     filtered_revenue = db.query(func.sum(Invoice.total_amount)).filter(
         Invoice.company_id == company_id,
+        Invoice.is_deleted == False,
         Invoice.created_at >= filter_start,
         Invoice.created_at <= filter_end
     ).scalar() or 0.0
@@ -80,6 +83,7 @@ def get_dashboard_metrics(
         func.sum(InvoiceItem.quantity).label('total_sold')
     ).join(InvoiceItem).join(Invoice).filter(
         Invoice.company_id == company_id,
+        Invoice.is_deleted == False,
         Invoice.created_at >= filter_start,
         Invoice.created_at <= filter_end
     ).group_by(Product.name).order_by(func.sum(InvoiceItem.quantity).desc()).limit(5).all()
@@ -93,6 +97,7 @@ def get_dashboard_metrics(
         func.sum(InvoiceItem.igst).label('total_igst')
     ).join(Invoice).filter(
         Invoice.company_id == company_id,
+        Invoice.is_deleted == False,
         Invoice.created_at >= filter_start,
         Invoice.created_at <= filter_end
     ).first()
@@ -108,6 +113,7 @@ def get_dashboard_metrics(
     low_stock_products = db.query(Product).filter(
         Product.company_id == company_id,
         Product.is_active == True,
+        Product.is_deleted == False,
         Product.stock <= 10
     ).order_by(Product.stock.asc()).all()
 
@@ -135,6 +141,7 @@ def get_dashboard_metrics(
         day_end = day_start + timedelta(days=1)
         day_total = db.query(func.sum(Invoice.total_amount)).filter(
             Invoice.company_id == company_id,
+            Invoice.is_deleted == False,
             Invoice.created_at >= day_start,
             Invoice.created_at < day_end
         ).scalar() or 0.0
@@ -144,9 +151,9 @@ def get_dashboard_metrics(
         })
 
     return {
-        "daily_sales": daily_sales,
-        "monthly_revenue": monthly_revenue,
-        "filtered_revenue": filtered_revenue,
+        "daily_sales": float(daily_sales or 0),
+        "monthly_revenue": float(monthly_revenue or 0),
+        "filtered_revenue": float(filtered_revenue or 0),
         "top_products": formatted_top_products,
         "gst_summary": gst_summary,
         "low_stock_products": low_stock_list,

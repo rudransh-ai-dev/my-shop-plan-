@@ -2,12 +2,11 @@ from fastapi import FastAPI, Depends
 import sentry_sdk
 from backend.config import settings
 from backend.middleware import TenantMiddleware
-from backend.database import engine, Base
-from backend.models import Base as ModelsBase # Actually just importing the module is enough so Base knows
-import backend.models
+from backend.database import engine, Base  # noqa: F401
+import backend.models  # noqa: F401
 
-# In a real app, migrations are preferred. We'll rely on Alembic later, but for scaffolding, this handles quick creation.
-Base.metadata.create_all(bind=engine)
+# Note: database schema is managed by Alembic migrations (Milestone 0).
+# Do not call Base.metadata.create_all() in production.
 
 
 # Initialize Sentry if configured
@@ -18,12 +17,18 @@ if settings.SENTRY_DSN:
     )
 
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from backend.rate_limit import limiter
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version="1.0.0",
     description="BusinessHub ERP Minimum Viable Product API",
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS
 app.add_middleware(

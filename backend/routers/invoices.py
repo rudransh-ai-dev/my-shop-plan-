@@ -1,135 +1,92 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List
 from datetime import datetime
 from backend.database import get_db
-from backend.models import Invoice, InvoiceItem, Product, Company, StockMovement, StockMovementType
+from backend.models import Invoice, Company
 from backend.schemas import InvoiceCreate, InvoiceResponse
-from backend.middleware import get_current_company_id
+from backend.middleware import get_current_company_id, get_current_user_id
+from backend.services.db_utils import (
+    transactional,
+    idempotency_key_get,
+    idempotency_key_create,
+    idempotency_key_store_response,
+    idempotency_key_parse_response,
+    sha256,
+    stable_json_dumps,
+)
+from backend.services.invoice_service import create_invoice_atomic
+from backend.rate_limit import limiter
 
 router = APIRouter()
 
 def get_company_id():
     company_id = get_current_company_id()
     if not company_id:
-        raise HTTPException(status_code=400, detail="X-Company-ID header is missing")
+        raise HTTPException(status_code=401, detail="Not authenticated")
     return company_id
 
-def generate_invoice_number(db: Session, company_id: int) -> str:
-    current_year = datetime.now().year
-    current_month = datetime.now().month
-    
-    if current_month >= 4:
-        fy_start = current_year
-        fy_end = current_year + 1
-    else:
-        fy_start = current_year - 1
-        fy_end = current_year
-
-    fy_str = f"{fy_start}-{str(fy_end)[-2:]}"
-    
-    last_invoice = db.query(Invoice).filter(
-        Invoice.company_id == company_id,
-        Invoice.invoice_number.like(f"INV-{fy_str}-%")
-    ).order_by(Invoice.id.desc()).first()
-
-    if last_invoice:
-        last_seq = int(last_invoice.invoice_number.split("-")[-1])
-        new_seq = last_seq + 1
-    else:
-        new_seq = 1
-
-    return f"INV-{fy_str}-{new_seq:04d}"
-
 @router.post("/", response_model=InvoiceResponse)
-def create_invoice(invoice: InvoiceCreate, db: Session = Depends(get_db), company_id: int = Depends(get_company_id)):
-    company = db.query(Company).filter(Company.id == company_id).first()
-    
-    # We will assume intra-state (CGST/SGST) if no customer GSTIN or same state code.
-    is_inter_state = False
-    if company and company.gstin and invoice.customer_gstin:
-        # First 2 chars of GSTIN represent state code
-        if company.gstin[:2] != invoice.customer_gstin[:2]:
-            is_inter_state = True
+@limiter.limit("30/minute")
+def create_invoice(
+    request: Request,
+    invoice: InvoiceCreate,
+    db: Session = Depends(get_db),
+    company_id: int = Depends(get_company_id),
+):
+    idempotency_key = request.headers.get("Idempotency-Key")
+    endpoint = f"{request.method}:{request.url.path}"
+    user_id = get_current_user_id()
 
-    invoice_number = generate_invoice_number(db, company_id)
-    
-    db_invoice = Invoice(
-        company_id=company_id,
-        invoice_number=invoice_number,
-        customer_name=invoice.customer_name,
-        customer_gstin=invoice.customer_gstin,
-        total_amount=0.0
-    )
-    db.add(db_invoice)
-    db.flush() # To get invoice id
+    request_hash = None
+    if idempotency_key:
+        request_hash = sha256(stable_json_dumps(invoice.model_dump()))
 
-    total_amount = 0.0
+    with transactional(db):
+        if idempotency_key:
+            existing = idempotency_key_get(db=db, company_id=company_id, endpoint=endpoint, key=idempotency_key)
+            if existing and existing.request_hash and existing.request_hash != request_hash:
+                raise HTTPException(status_code=409, detail="Idempotency key reuse with different request payload")
+            if existing and existing.response_status and existing.response_body:
+                return idempotency_key_parse_response(existing)
 
-    for item in invoice.items:
-        product = db.query(Product).filter(Product.id == item.product_id, Product.company_id == company_id).first()
-        if not product:
-            raise HTTPException(status_code=404, detail=f"Product {item.product_id} not found")
-        
-        if product.stock < item.quantity:
-            raise HTTPException(status_code=400, detail=f"Insufficient stock for product {product.name}")
+        idem_row = None
+        if idempotency_key:
+            idem_row = idempotency_key_create(
+                db=db,
+                company_id=company_id,
+                endpoint=endpoint,
+                key=idempotency_key,
+                request_hash=request_hash,
+            )
 
-        # Update Stock
-        product.stock -= item.quantity
-        
-        # Record Stock Movement
-        movement = StockMovement(
-            company_id=company_id,
-            product_id=product.id,
-            quantity=item.quantity,
-            movement_type=StockMovementType.SALE.value,
-            remarks=f"Sold via {invoice_number}"
-        )
-        db.add(movement)
+        db_invoice = create_invoice_atomic(db=db, company_id=company_id, user_id=user_id, invoice=invoice)
+        db.refresh(db_invoice)
 
-        # Calculate GST
-        base_total = item.quantity * item.unit_price
-        cgst = 0.0
-        sgst = 0.0
-        igst = 0.0
-        
-        gst_rate = product.gst_rate
-        if is_inter_state:
-            igst = base_total * (gst_rate / 100)
-        else:
-            cgst = base_total * ((gst_rate / 2) / 100)
-            sgst = base_total * ((gst_rate / 2) / 100)
-            
-        item_total = base_total + cgst + sgst + igst
-        total_amount += item_total
+        if idem_row:
+            payload = InvoiceResponse.model_validate(db_invoice).model_dump()
+            idempotency_key_store_response(row=idem_row, status_code=200, response_body=payload)
 
-        db_item = InvoiceItem(
-            invoice_id=db_invoice.id,
-            product_id=product.id,
-            quantity=item.quantity,
-            unit_price=item.unit_price,
-            cgst=cgst,
-            sgst=sgst,
-            igst=igst,
-            total=item_total
-        )
-        db.add(db_item)
-
-    db_invoice.total_amount = total_amount
-    db.commit()
-    db.refresh(db_invoice)
-    
-    return db_invoice
+        return db_invoice
 
 @router.get("/", response_model=List[InvoiceResponse])
 def list_invoices(db: Session = Depends(get_db), company_id: int = Depends(get_company_id)):
-    invoices = db.query(Invoice).filter(Invoice.company_id == company_id).order_by(Invoice.created_at.desc()).all()
+    invoices = (
+        db.query(Invoice)
+        .filter(Invoice.company_id == company_id, Invoice.is_deleted == False)  # noqa: E712
+        .order_by(Invoice.created_at.desc())
+        .all()
+    )
     return invoices
 
 @router.get("/{invoice_id}", response_model=InvoiceResponse)
 def get_invoice(invoice_id: int, db: Session = Depends(get_db), company_id: int = Depends(get_company_id)):
-    invoice = db.query(Invoice).filter(Invoice.id == invoice_id, Invoice.company_id == company_id).first()
+    invoice = (
+        db.query(Invoice)
+        .filter(Invoice.id == invoice_id, Invoice.company_id == company_id, Invoice.is_deleted == False)  # noqa: E712
+        .first()
+    )
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
     return invoice

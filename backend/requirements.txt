@@ -15,3 +15,4 @@ weasyprint
 celery
 boto3
 sentry-sdk
+slowapi
