@@ -68,3 +68,4 @@ uvicorn backend.main:app --reload
 cd frontend
 npm run dev
 ```
+ date 3 / 18 / 2026 project phase 1 compleat and phase 2 start we also compleat the live demo of this project on 3 / 16 / 2026 of phase 1 
