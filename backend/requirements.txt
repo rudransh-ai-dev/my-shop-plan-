@@ -16,3 +16,8 @@ celery
 boto3
 sentry-sdk
 slowapi
+numpy
+pandas
+scikit-learn
+statsmodels
+matplotlib

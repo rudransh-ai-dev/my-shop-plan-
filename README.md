@@ -1,72 +1,138 @@
-# Shop Project
+# 🏪 Shop Hub ERP — AI-Powered Enterprise Resource Planning
 
-A full-stack shop management system with FastAPI and React.
-
-## 🪟 Windows Setup Guide
-
-If you are moving this project from Linux to Windows, follow these steps to get started:
-
-### 1. Prerequisites
-* [Python 3.10+](https://www.python.org/downloads/)
-* [Node.js & npm](https://nodejs.org/)
-* [Docker Desktop](https://www.docker.com/products/docker-desktop/) (For Database & Redis)
-* [Git for Windows](https://git-scm.com/download/win)
-
-### 2. Database Setup
-1. Open Docker Desktop.
-2. Open PowerShell or Command Prompt in the project root:
-   ```powershell
-   docker-compose up -d
-   ```
-
-### 3. Backend Setup
-1. Navigate to the project root and create a fresh Windows virtual environment:
-   ```powershell
-   python -m venv backend/venv
-   ```
-2. Activate the virtual environment:
-   ```powershell
-   .\backend\venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```powershell
-   pip install -r backend/requirements.txt
-   ```
-4. Start the backend:
-   ```powershell
-   uvicorn backend.main:app --reload
-   ```
-
-### 4. Frontend Setup
-1. Open a new terminal window.
-2. Navigate to the frontend directory:
-   ```powershell
-   cd frontend
-   ```
-3. Install and start:
-   ```powershell
-   npm install
-   npm run dev
-   ```
-
-### 5. Access the App
-* **Frontend**: [http://localhost:5173](http://localhost:5173)
-* **Backend API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+> A full-stack, AI-integrated ERP system built as a **BCA 6th Semester Final Year Project**. Covers all 4 core subjects through real-world implementation.
 
 ---
 
-## 🐧 Linux Setup (Original)
+## 🎓 BCA Subject Coverage
+
+| Code | Subject | Implementation |
+|------|---------|---------------|
+| **BCA6001** | Information & Cyber Security | Audit trails, brute-force detection, SHA-256 PII hashing, encryption compliance dashboard |
+| **BCA6002** | Internet of Things | Virtual sensor mesh, real-time weight/RFID simulation, hardware-to-cloud stock sync |
+| **BCA6003** | E-Commerce | GST-compliant invoicing (CGST/SGST/IGST), customer billing, dual-layer inventory, multi-tenant architecture |
+| **BCA6004** | Data Science & Machine Learning | Sales forecasting (Linear Regression), anomaly detection (Z-Score), consumption velocity analysis |
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18 + Vite + Tailwind CSS + Recharts |
+| Backend | FastAPI + Uvicorn (Python) |
+| Database | PostgreSQL |
+| ML/DS | scikit-learn, NumPy, Pandas, Statsmodels |
+| Security | JWT Auth + bcrypt + SHA-256 |
+| DevOps | Docker Compose + Git |
+
+---
+
+## 📂 Project Structure
+
+```
+shop-system/
+├── backend/
+│   ├── main.py                    # FastAPI application entry
+│   ├── models.py                  # SQLAlchemy ORM models
+│   ├── routers/
+│   │   ├── auth.py                # JWT authentication
+│   │   ├── dashboard.py           # Sales metrics & KPIs
+│   │   ├── inventory.py           # Dual-layer stock management
+│   │   ├── invoices.py            # GST-compliant billing
+│   │   └── analytics.py           # ML/DS/IoT/Security endpoints
+│   └── services/
+│       ├── analytics.py           # [BCA6004] ML models
+│       ├── cybersecurity.py       # [BCA6001] Threat detection
+│       ├── iot.py                 # [BCA6002] Sensor simulation
+│       ├── inventory_service.py   # Stock operations
+│       └── invoice_service.py     # Invoice logic + GST
+├── frontend/
+│   └── src/
+│       ├── pages/
+│       │   ├── Dashboard.jsx      # Operations hub
+│       │   ├── AIInsights.jsx     # [BCA6004] ML predictions
+│       │   ├── SecurityCenter.jsx # [BCA6001] Cyber security
+│       │   ├── IoTMonitor.jsx     # [BCA6002] IoT dashboard
+│       │   ├── Inventory.jsx      # Product management
+│       │   ├── StoreRoom.jsx      # Warehouse management
+│       │   ├── Invoices.jsx       # [BCA6003] Billing
+│       │   └── Reports.jsx        # GST reports
+│       └── components/
+│           ├── Sidebar.jsx        # Navigation with BCA modules
+│           └── Layout.jsx         # App shell
+└── docker-compose.yml
+```
+
+---
+
+## 🚀 Quick Start
+
+### 1. Infrastructure
 ```bash
-# Start Docker
-sudo docker compose up -d
+docker-compose up -d
+```
 
-# Start Backend
-source backend/venv/bin/activate
+### 2. Backend
+```bash
+cd backend
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
 uvicorn backend.main:app --reload
+```
 
-# Start Frontend
+### 3. Frontend
+```bash
 cd frontend
+npm install
 npm run dev
 ```
- 1. date 3 / 18 / 2026 project phase 1 compleat and phase 2 start we also compleat the live demo of this project on 3 / 16 / 2026 of phase 1 
- 2. we made a small changes also 
+
+---
+
+## 🤖 ML/DS Features (BCA6004)
+
+### Sales Forecasting
+- **Algorithm**: `sklearn.linear_model.LinearRegression`
+- **Input**: 30-day historical sales data
+- **Output**: 7-day predicted revenue trend
+
+### Anomaly Detection
+- **Method**: Z-Score statistical analysis
+- **Formula**: `Z = (X - μ) / σ`
+- **Threshold**: |2.5| for medium, |3.5| for high severity
+
+### Inventory Optimization
+- **Method**: Consumption Velocity = `Σ(units_sold) / days`
+- **Output**: Days-to-zero prediction per product
+
+---
+
+## 🔒 Cyber Security Features (BCA6001)
+
+- **Brute-Force Detection**: Monitors login failures and flags suspicious patterns
+- **PII Hashing**: Live SHA-256 cryptography demo
+- **Encryption Compliance**: Automated scan for bcrypt/PBKDF2 compliance
+- **Audit Trails**: Immutable logs for all security-sensitive operations
+
+---
+
+## 📡 IoT Features (BCA6002)
+
+- **Virtual Sensor Mesh**: Simulates shelf-mounted weight/RFID sensors
+- **Device Health Monitoring**: Signal strength, battery level, connectivity
+- **Cloud Sync**: Real-time sensor → database stock updates
+
+---
+
+## 🛒 E-Commerce Features (BCA6003)
+
+- **GST Engine**: Automated CGST, SGST, IGST calculation by HSN
+- **Invoice Numbering**: Indian Financial Year format (APR–MAR)
+- **Dual Inventory**: Shop Shelf vs. Store Room management
+- **Customer Search**: By name, phone, date range
+
+---
+
+*Built with ❤️ as a BCA Final Year Project*

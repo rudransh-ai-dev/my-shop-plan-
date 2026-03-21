@@ -9,6 +9,9 @@ import Inventory from './pages/Inventory';
 import Invoices from './pages/Invoices';
 import Reports from './pages/Reports';
 import StoreRoom from './pages/StoreRoom';
+import AIInsights from './pages/AIInsights';
+import SecurityCenter from './pages/SecurityCenter';
+import IoTMonitor from './pages/IoTMonitor';
 import Layout from './components/Layout';
 
 function App() {
@@ -28,6 +31,9 @@ function App() {
                  <Route path="/storeroom" element={<StoreRoom />} />
                  <Route path="/invoices" element={<Invoices />} />
                  <Route path="/reports" element={<Reports />} />
+                 <Route path="/ai-insights" element={<AIInsights />} />
+                 <Route path="/security" element={<SecurityCenter />} />
+                 <Route path="/iot" element={<IoTMonitor />} />
                </Route>
             </Route>
 
