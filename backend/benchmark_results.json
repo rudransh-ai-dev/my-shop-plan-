@@ -1,0 +1,14 @@
+{
+    "1. SKU Exact Match (B-Tree Target)": {
+        "avg_time_ms": 0.244
+    },
+    "2. Wildcard Product Search (GIN Target vs LIKE)": {
+        "avg_time_ms": 397.877
+    },
+    "3. Customer Invoice History (Composite Index Target)": {
+        "avg_time_ms": 106.094
+    },
+    "4. Monthly Revenue Aggregation (Date Index Target)": {
+        "avg_time_ms": 283.463
+    }
+}

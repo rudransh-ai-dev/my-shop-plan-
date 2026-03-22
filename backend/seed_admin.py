@@ -1,6 +1,6 @@
 import psycopg2
 
-conn = psycopg2.connect('postgresql://postgres:password@localhost:5432/businesshub')
+conn = psycopg2.connect('postgresql://postgres:password@localhost:5433/businesshub')
 cur = conn.cursor()
 
 try:
