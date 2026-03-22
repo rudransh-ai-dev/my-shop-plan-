@@ -76,7 +76,7 @@ const AIInsights = () => {
                 AI Insights
               </h2>
               <p className={`mt-0.5 text-sm ${textSecondary}`}>
-                BCA6004 — Data Science & Machine Learning
+                Advanced Data Science & Machine Learning
               </p>
             </div>
           </div>

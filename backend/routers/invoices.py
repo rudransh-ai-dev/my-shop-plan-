@@ -76,6 +76,7 @@ def list_invoices(db: Session = Depends(get_db), company_id: int = Depends(get_c
         db.query(Invoice)
         .filter(Invoice.company_id == company_id, Invoice.is_deleted == False)  # noqa: E712
         .order_by(Invoice.created_at.desc())
+        .limit(100)
         .all()
     )
     return invoices

@@ -78,7 +78,7 @@ const SecurityCenter = () => {
                 Security Center
               </h2>
               <p className={`mt-0.5 text-sm ${textSecondary}`}>
-                BCA6001 — Information & Cyber Security
+                Advanced Information & Cyber Security
               </p>
             </div>
           </div>

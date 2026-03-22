@@ -22,7 +22,7 @@ const navigation = [
   { name: 'GST Reports', href: '/reports', icon: Clock },
 ];
 
-const bcaModules = [
+const advancedModules = [
   { name: 'AI Insights', href: '/ai-insights', icon: Brain },
   { name: 'Security', href: '/security', icon: Shield },
   { name: 'IoT Monitor', href: '/iot', icon: Cpu },
@@ -65,14 +65,14 @@ const Sidebar = () => {
                         </NavLink>
                     ))}
 
-                    {/* BCA Modules Divider */}
+                    {/* Advanced Modules Divider */}
                     <div className={`pt-4 pb-2 px-3`}>
                         <p className={`text-[10px] font-bold uppercase tracking-widest ${
                             darkMode ? 'text-gray-600' : 'text-slate-600'
-                        }`}>🎓 BCA Modules</p>
+                        }`}>🚀 ADVANCED MODULES</p>
                     </div>
 
-                    {bcaModules.map((item) => (
+                    {advancedModules.map((item) => (
                         <NavLink
                             key={item.name}
                             to={item.href}

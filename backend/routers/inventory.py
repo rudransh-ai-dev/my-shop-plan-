@@ -32,7 +32,7 @@ def list_products(db: Session = Depends(get_db), company_id: int = Depends(get_c
         Product.company_id == company_id,
         Product.is_active == True,
         Product.is_deleted == False
-    ).all()
+    ).limit(100).all()
     return products
 
 @router.post("/", response_model=ProductResponse)

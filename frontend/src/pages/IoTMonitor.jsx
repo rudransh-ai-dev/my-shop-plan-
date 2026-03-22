@@ -94,7 +94,7 @@ const IoTMonitor = () => {
                 IoT Monitor
               </h2>
               <p className={`mt-0.5 text-sm ${textSecondary}`}>
-                BCA6002 — Internet of Things
+                Advanced IoT Integration
               </p>
             </div>
           </div>

@@ -58,7 +58,7 @@ def get_dashboard_metrics(
     daily_sales = db.query(func.sum(Invoice.total_amount)).filter(
         Invoice.company_id == company_id,
         Invoice.is_deleted == False,
-        Invoice.created_at >= today_start
+        Invoice.invoice_date >= today_start
     ).scalar() or 0.0
 
     # Monthly Revenue (current month, always)
@@ -66,15 +66,15 @@ def get_dashboard_metrics(
     monthly_revenue = db.query(func.sum(Invoice.total_amount)).filter(
         Invoice.company_id == company_id,
         Invoice.is_deleted == False,
-        Invoice.created_at >= month_start
+        Invoice.invoice_date >= month_start
     ).scalar() or 0.0
 
     # Filtered Revenue (based on date range selection)
     filtered_revenue = db.query(func.sum(Invoice.total_amount)).filter(
         Invoice.company_id == company_id,
         Invoice.is_deleted == False,
-        Invoice.created_at >= filter_start,
-        Invoice.created_at <= filter_end
+        Invoice.invoice_date >= filter_start,
+        Invoice.invoice_date <= filter_end
     ).scalar() or 0.0
 
     # Top Products (within date range)
@@ -84,8 +84,8 @@ def get_dashboard_metrics(
     ).join(InvoiceItem).join(Invoice).filter(
         Invoice.company_id == company_id,
         Invoice.is_deleted == False,
-        Invoice.created_at >= filter_start,
-        Invoice.created_at <= filter_end
+        Invoice.invoice_date >= filter_start,
+        Invoice.invoice_date <= filter_end
     ).group_by(Product.name).order_by(func.sum(InvoiceItem.quantity).desc()).limit(5).all()
 
     formatted_top_products = [{"name": p.name, "sold": p.total_sold} for p in top_products]
@@ -98,8 +98,8 @@ def get_dashboard_metrics(
     ).join(Invoice).filter(
         Invoice.company_id == company_id,
         Invoice.is_deleted == False,
-        Invoice.created_at >= filter_start,
-        Invoice.created_at <= filter_end
+        Invoice.invoice_date >= filter_start,
+        Invoice.invoice_date <= filter_end
     ).first()
 
     gst_summary = {
@@ -115,7 +115,7 @@ def get_dashboard_metrics(
         Product.is_active == True,
         Product.is_deleted == False,
         Product.stock <= 10
-    ).order_by(Product.stock.asc()).all()
+    ).order_by(Product.stock.asc()).limit(20).all()
 
     low_stock_list = []
     for p in low_stock_products:
@@ -142,8 +142,8 @@ def get_dashboard_metrics(
         day_total = db.query(func.sum(Invoice.total_amount)).filter(
             Invoice.company_id == company_id,
             Invoice.is_deleted == False,
-            Invoice.created_at >= day_start,
-            Invoice.created_at < day_end
+            Invoice.invoice_date >= day_start,
+            Invoice.invoice_date < day_end
         ).scalar() or 0.0
         sales_by_day.append({
             "date": day_start.strftime("%b %d"),
