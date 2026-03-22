@@ -61,7 +61,7 @@ class SecurityService:
                 })
                 break
                 
-        # Simulate Geo-IP security check (BCA Cyber Security concept)
+        # Simulate Geo-IP security check (Advanced Cyber Security concept)
         suspicious_geos = ["N/A (Simulated Proxy)", "Unknown High-Risk Region"]
         for log in recent_logins:
             if any(geo in log.details for geo in suspicious_geos):
