@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Invoices from './pages/Invoices';
+import Billing from './pages/Billing';
 import Reports from './pages/Reports';
 import StoreRoom from './pages/StoreRoom';
 import AIInsights from './pages/AIInsights';
@@ -29,7 +30,8 @@ function App() {
                  <Route path="/dashboard" element={<Dashboard />} />
                  <Route path="/inventory" element={<Inventory />} />
                  <Route path="/storeroom" element={<StoreRoom />} />
-                 <Route path="/invoices" element={<Invoices />} />
+                 <Route path="/orders" element={<Invoices />} />
+                 <Route path="/billing" element={<Billing />} />
                  <Route path="/reports" element={<Reports />} />
                  <Route path="/ai-insights" element={<AIInsights />} />
                  <Route path="/security" element={<SecurityCenter />} />

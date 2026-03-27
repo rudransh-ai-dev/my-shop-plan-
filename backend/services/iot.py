@@ -3,19 +3,13 @@ import logging
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 from sqlalchemy.orm import Session
-from backend.models import Product, StockMovement
+from backend.models import Product
 
 logger = logging.getLogger(__name__)
 
 class IoTService:
     @staticmethod
     def simulate_sensor_reading(product_sku: str):
-        """
-        [IoT: Hardware Abstraction] 
-        Simulates values coming from a Load Cell (weight sensor) or RFID tag.
-        """
-        # Logic: Sensor detects weight, converts it to 'units remaining'
-        # e.g., total weight / unit weight = quantity
         return {
             "sensor_id": f"SN_GATEWAY_0{random.randint(1, 4)}",
             "sku": product_sku,
@@ -27,32 +21,17 @@ class IoTService:
 
     @staticmethod
     def push_sensor_to_inventory(db: Session, company_id: int, sku: str, quantity: int):
-        """
-        [IoT: Real-time Cloud Integration] 
-        Syncs a physical 'sensor event' with our ERP database.
-        """
         product = db.query(Product).filter(
             Product.company_id == company_id,
-            Product.sku == sku,
+            Product.product_id == sku,
             Product.is_deleted == False
         ).first()
 
         if not product:
-            return {"status": "ERROR", "message": "Product SKU not found for sensor node."}
+            return {"status": "ERROR", "message": "Product ID not found for sensor node."}
 
         old_stock = product.stock
-        # Update ERP stock based on sensor reading
         product.stock = quantity
-        
-        # Log this as an automated 'IoT Sensor Adjustment'
-        movement = StockMovement(
-            company_id=company_id,
-            product_id=product.id,
-            quantity=quantity - old_stock,
-            movement_type="iot_sensor_sync",
-            remarks=f"Sync from Sensor Node {datetime.utcnow().strftime('%H:%M:%S')}"
-        )
-        db.add(movement)
         db.commit()
         
         return {

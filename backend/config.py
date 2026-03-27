@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
 
     # Database
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5433/businesshub"
+    DATABASE_URL: str = "postgresql://postgres:yourpassword@localhost:5433/businesshub"
     
     # Redis (Rate Limiting, Caching, Celery)
     REDIS_URL: str = "redis://localhost:6379/0"

@@ -56,28 +56,32 @@ class ChatMessage(BaseModel):
     message: str
 
 @router.post("/chat")
-def ai_chat(msg: ChatMessage, db: Session = Depends(get_db), company_id: int = Depends(get_company_id)):
+def ai_chat(msg: ChatMessage, db: Session = Depends(get_db)):
     """Smart assistant for business insights using Ollama with a fail-safe fallback."""
     from sqlalchemy import func
-    from backend.models import Invoice, Product
+    from backend.models import Order, OrderItem, Customer
     from datetime import datetime
     
     user_msg = msg.message.lower()
-    now = datetime.utcnow()
-    month_start = datetime(now.year, now.month, 1)
 
-    # 1. Gather live database context
-    revenue = db.query(func.sum(Invoice.total_amount)).filter(
-        Invoice.company_id == company_id, 
-        Invoice.invoice_date >= month_start
-    ).scalar() or 0
+    # 1. Gather live database context (Top level metrics)
+    totals = db.query(
+        func.sum(OrderItem.sales).label("total_sales"),
+        func.sum(OrderItem.profit).label("total_profit")
+    ).first()
     
-    low_stock = db.query(Product).filter(Product.company_id == company_id, Product.stock <= 10).count()
-    
+    # Top Region
+    top_region = db.query(
+        Customer.region,
+        func.sum(OrderItem.sales).label("sales")
+    ).join(Order, Order.customer_key == Customer.id).join(
+        OrderItem, OrderItem.order_key == Order.id
+    ).group_by(Customer.region).order_by(func.sum(OrderItem.sales).desc()).first()
+
     context_data = {
-        "monthly_revenue": round(revenue, 2),
-        "low_stock_items_count": low_stock,
-        "gst_compliance": "Optimal"
+        "total_sales": float(totals.total_sales or 0),
+        "total_profit": float(totals.total_profit or 0),
+        "top_region": top_region.region if top_region else "Unknown"
     }
 
     # 2. Attempt to use Ollama LLaMA3 if installed and running
@@ -87,9 +91,9 @@ Your goal is to be precise, short, and highly professional. Do not use generic f
 Always use the following live database context to answer the user's question, and format your text beautifully with bullet points or bold text where appropriate.
 
 LIVE ERP DATA CONTEXT:
-- Monthly Revenue: ₹{context_data['monthly_revenue']:,.2f}
-- Low Stock Items: {context_data['low_stock_items_count']} (Needs Reordering)
-- GST Compliance Status: {context_data['gst_compliance']}
+- Total Lifetime Sales: ₹{context_data['total_sales']:,.2f}
+- Total Lifetime Profit: ₹{context_data['total_profit']:,.2f}
+- Best Performing Region: {context_data['top_region']}
 """
         
         full_prompt = f"{system_prompt}\n\nUSER QUESTION: {msg.message}\nYOUR ANALYSIS:"
@@ -97,7 +101,7 @@ LIVE ERP DATA CONTEXT:
         res = requests.post(
             "http://localhost:11434/api/generate",
             json={
-                "model": "llama3", 
+                "model": "llama3:8b", 
                 "prompt": full_prompt, 
                 "stream": False,
                 "options": {
@@ -105,28 +109,22 @@ LIVE ERP DATA CONTEXT:
                     "top_p": 0.9
                 }
             },
-            timeout=10.0
+            timeout=90.0
         )
-        if res.status_code == 200:
-            return {"response": res.json().get("response", "Error parsing AI response.")}
+        res.raise_for_status()
+        return {"response": res.json().get("response", "Error parsing AI response.")}
     except Exception as e:
         print(f"Ollama AI Error: {e}") # Fallback linearly
 
     # 3. High-speed Fallback Logic (Presentation Safe!)
     if "revenue" in user_msg or "sales" in user_msg or "earn" in user_msg:
-        return {"response": f"📊 Your revenue for this month is **₹{revenue:,.2f}**. It shows strong daily consistency. Keep an eye on peak shopping hours!"}
+        return {"response": f"📊 Your total sales stand at **₹{context_data['total_sales']:,.2f}**. Keep pushing!"}
     
-    elif "gst" in user_msg or "tax" in user_msg:
-        return {"response": "🧾 Your GST liability is auto-calculated on each invoice. The total GST for the past month suggests optimal compliance."}
+    elif "profit" in user_msg or "margin" in user_msg:
+        return {"response": f"💰 Your total captured profit is **₹{context_data['total_profit']:,.2f}**!"}
         
-    elif "top" in user_msg or "best" in user_msg:
-         return {"response": "🔥 Your top selling products have shown an 8% increase in demand this week! Ensure you maintain stock for your most popular items."}
-
-    elif "low" in user_msg or "stock" in user_msg:
-         return {"response": f"📦 Alert: You currently have **{low_stock} items** running critically low on the shop shelf. Check the Dashboard for urgent restock notifications."}
-
-    elif "improve" in user_msg or "suggest" in user_msg or "health" in user_msg:
-         return {"response": "💡 **Business Health Score: 85/100 (Excellent)**\n\n**Suggestions:**\n1. Move fast-moving items from Store Room to Shop Shelf.\n2. Reorder your Top 5 products proactively."}
+    elif "region" in user_msg or "best" in user_msg:
+        return {"response": f"🌍 Your best performing region is the **{context_data['top_region']}** region. Allocate marketing budget accordingly."}
 
     else:
-        return {"response": f"🤖 I am connected to your live BusinessHub ERP! Your revenue this month is ₹{revenue:,.2f}. How can I assist you?"}
+        return {"response": f"🤖 I am connected to your live BusinessHub ERP! Your total sales are ₹{context_data['total_sales']:,.2f}. How can I assist you?"}

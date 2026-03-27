@@ -9,6 +9,7 @@ import {
   Warehouse,
   Brain,
   Shield,
+  ShoppingCart,
   Cpu
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -16,10 +17,10 @@ import { useTheme } from '../context/ThemeContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
-  { name: 'Inventory', href: '/inventory', icon: Package },
+  { name: 'Billing', href: '/billing', icon: ShoppingCart },
+  { name: 'Orders', href: '/orders', icon: FileText },
   { name: 'Store Room', href: '/storeroom', icon: Warehouse },
-  { name: 'Invoices', href: '/invoices', icon: FileText },
-  { name: 'GST Reports', href: '/reports', icon: Clock },
+  { name: 'Inventory', href: '/inventory', icon: Package },
 ];
 
 const advancedModules = [

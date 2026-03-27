@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, Activity, FileText, ShoppingCart, Loader2 } from 'lucide-react';
 import client from '../api/client';
 import { useTheme } from '../context/ThemeContext';
-import ReactMarkdown from 'react-markdown';
 
 const AIInsights = () => {
     const { darkMode } = useTheme();
@@ -62,7 +61,6 @@ const AIInsights = () => {
     const cardClass = darkMode ? 'bg-[#1e293b] border-gray-800' : 'bg-white border-slate-200';
     const textPrimary = darkMode ? 'text-gray-100' : 'text-slate-900';
     const textSecondary = darkMode ? 'text-gray-400' : 'text-slate-500';
-    const borderClass = darkMode ? 'border-gray-800' : 'border-slate-200';
     const inputBg = darkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-slate-300 text-slate-900';
 
     return (
@@ -95,15 +93,13 @@ const AIInsights = () => {
                             </div>
                         )}
                         <div
-                            className={`max-w-[80%] rounded-2xl px-5 py-3.5 shadow-sm text-sm/relaxed ${
+                            className={`max-w-[80%] rounded-2xl px-5 py-3.5 shadow-sm text-sm/relaxed whitespace-pre-wrap ${
                                 message.role === 'user'
                                     ? 'bg-indigo-600 text-white rounded-tr-sm'
                                     : `${cardClass} border rounded-tl-sm ${textPrimary}`
                             }`}
                         >
-                            <ReactMarkdown className="prose prose-sm dark:prose-invert">
-                                {message.content}
-                            </ReactMarkdown>
+                            {message.content}
                         </div>
                         {message.role === 'user' && (
                             <div className="shrink-0 h-10 w-10 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center">

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Enum, Numeric
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Numeric, BigInteger, Date, Index
 from sqlalchemy.orm import relationship
 from backend.database import Base
 from datetime import datetime
@@ -8,7 +8,6 @@ class BaseModel(Base):
     __abstract__ = True
     id = Column(Integer, primary_key=True, index=True)
     is_active = Column(Boolean, default=True)
-    # Soft delete for audit safety (never hard delete business data)
     is_deleted = Column(Boolean, default=False, server_default="false", index=True)
     deleted_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -33,80 +32,70 @@ class User(BaseModel):
     hashed_password = Column(String)
     role = Column(String, default=UserRole.EMPLOYEE.value)
 
+class Customer(BaseModel):
+    __tablename__ = "customers"
+    company_id = Column(Integer, ForeignKey("companies.id"), index=True)
+    customer_id = Column(String, unique=True, index=True) # E.g., CUST000001
+    first_name = Column(String)
+    last_name = Column(String)
+    dob = Column(Date, nullable=True)
+    segment = Column(String, index=True) # Consumer, Corporate
+    region = Column(String, index=True) # East, West, South
+    country = Column(String)
+    state = Column(String)
+    city_type = Column(String) # Tier 1, Village
+    postal_code = Column(String)
+
 class Product(BaseModel):
     __tablename__ = "products"
     company_id = Column(Integer, ForeignKey("companies.id"), index=True)
-    sku = Column(String, index=True)
-    name = Column(String, index=True)
-    purchase_price = Column(Numeric(12, 2), default=0)
-    selling_price = Column(Numeric(12, 2), default=0)
-    stock = Column(Integer, default=0)  # Shop shelf stock
-    store_room_stock = Column(Integer, default=0, server_default="0")  # Store room stock
-    total_sold = Column(Integer, default=0, server_default="0")  # Total units sold
-    gst_rate = Column(Numeric(5, 2), default=0)
-    hsn_code = Column(String, nullable=True)
-    supplier = Column(String, nullable=True)
+    product_id = Column(String, unique=True, index=True) # E.g., PROD000001
+    category = Column(String, index=True)
+    sub_category = Column(String)
+    name = Column(String)
+    stock = Column(Integer, default=100)
+    store_room_stock = Column(Integer, default=500)
 
-class InvoiceStatus(str, enum.Enum):
-    DRAFT = "draft"
-    PAID = "paid"
-    OVERDUE = "overdue"
-    CANCELLED = "cancelled"
-
-class Invoice(BaseModel):
-    __tablename__ = "invoices"
+class Order(BaseModel):
+    __tablename__ = "orders"
     company_id = Column(Integer, ForeignKey("companies.id"), index=True)
-    invoice_number = Column(String, index=True) # e.g., INV-2026-27-0001
-    customer_name = Column(String)
-    customer_gstin = Column(String, nullable=True)
-    invoice_date = Column(DateTime, default=datetime.utcnow, index=True)
-    total_amount = Column(Numeric(12, 2), default=0)
-    status = Column(String, default=InvoiceStatus.DRAFT.value)
+    order_id = Column(String, unique=True, index=True) # E.g., ORD000001
+    customer_key = Column(Integer, ForeignKey("customers.id"))
+    order_date = Column(Date, index=True)
+    ship_date = Column(Date, nullable=True)
+    ship_mode = Column(String)
+    outlet_type = Column(String)
+    year = Column(Integer, index=True)
     
-    items = relationship("InvoiceItem", back_populates="invoice")
+    # Relationships
+    customer = relationship("Customer")
+    items = relationship("OrderItem", back_populates="order")
 
-class InvoiceItem(BaseModel):
-    __tablename__ = "invoice_items"
-    invoice_id = Column(Integer, ForeignKey("invoices.id"), index=True)
-    product_id = Column(Integer, ForeignKey("products.id"))
+class OrderItem(BaseModel):
+    __tablename__ = "order_items"
+    order_key = Column(Integer, ForeignKey("orders.id"), index=True)
+    product_key = Column(Integer, ForeignKey("products.id"), index=True)
+    
     quantity = Column(Integer, default=1)
-    unit_price = Column(Numeric(12, 2))
-    cgst = Column(Numeric(12, 2), default=0)
-    sgst = Column(Numeric(12, 2), default=0)
-    igst = Column(Numeric(12, 2), default=0)
-    total = Column(Numeric(12, 2))
+    sales = Column(Numeric(12, 2))
+    discount = Column(Numeric(5, 2))
+    profit = Column(Numeric(12, 2))
     
-    invoice = relationship("Invoice", back_populates="items")
-
-class StockMovementType(str, enum.Enum):
-    SALE = "sale"
-    PURCHASE = "purchase"
-    ADJUSTMENT = "adjustment"
-    MOVE_TO_SHOP = "move_to_shop"
-    MOVE_TO_STORE = "move_to_store"
-    RESTOCK_STORE = "restock_store"
-    RESTOCK_SHOP = "restock_shop"
-
-class StockMovement(BaseModel):
-    __tablename__ = "stock_movements"
-    company_id = Column(Integer, ForeignKey("companies.id"), index=True)
-    product_id = Column(Integer, ForeignKey("products.id"), index=True)
-    quantity = Column(Integer)
-    movement_type = Column(String)
-    remarks = Column(Text, nullable=True)
+    # Relationships
+    order = relationship("Order", back_populates="items")
+    product = relationship("Product")
 
 class AuditLog(BaseModel):
     __tablename__ = "audit_logs"
     company_id = Column(Integer, ForeignKey("companies.id"), index=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=True)
-    action = Column(String, index=True)  # e.g., "LOGIN", "CREATE_INVOICE"
+    action = Column(String, index=True)
     details = Column(Text)
 
 class IdempotencyKey(BaseModel):
     __tablename__ = "idempotency_keys"
     company_id = Column(Integer, ForeignKey("companies.id"), index=True)
     key = Column(String, index=True)
-    # e.g. "POST:/api/v1/invoices/"
     endpoint = Column(String, index=True)
     request_hash = Column(String, nullable=True)
     response_status = Column(Integer, nullable=True)

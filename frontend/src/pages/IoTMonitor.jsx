@@ -162,7 +162,7 @@ const IoTMonitor = () => {
               type="text"
               value={skuInput}
               onChange={(e) => setSkuInput(e.target.value)}
-              placeholder="Enter Product SKU (e.g., SKU001)"
+              placeholder="Enter Product ID (e.g., PROD000001)"
               className={inputClass}
             />
             <button onClick={simulateSensor} disabled={simulating}
@@ -213,7 +213,7 @@ const IoTMonitor = () => {
               type="text"
               value={syncSku}
               onChange={(e) => setSyncSku(e.target.value)}
-              placeholder="Product SKU"
+              placeholder="Product ID (e.g., PROD000001)"
               className={inputClass}
             />
             <input

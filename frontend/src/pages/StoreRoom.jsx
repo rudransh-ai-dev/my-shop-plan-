@@ -24,7 +24,7 @@ const StoreRoom = () => {
         try {
             setLoading(true);
             const response = await client.get('/inventory/');
-            setProducts(response.data);
+            setProducts(response.data.data);
             setError(null);
         } catch (err) {
             setError('Failed to fetch products');
