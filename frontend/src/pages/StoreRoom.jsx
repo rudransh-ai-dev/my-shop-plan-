@@ -11,6 +11,20 @@ const StoreRoom = () => {
     const [search, setSearch] = useState('');
     const [sortOrder, setSortOrder] = useState('az');
 
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const [jumpInput, setJumpInput] = useState('');
+    const limit = 50;
+
+    const handleJump = () => {
+        const p = parseInt(jumpInput, 10);
+        if (!isNaN(p) && p >= 1 && p <= totalPages) {
+            setPage(p);
+            setJumpInput('');
+        }
+    };
+
     // Stock action modal
     const [isStockModalOpen, setIsStockModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
@@ -20,11 +34,16 @@ const StoreRoom = () => {
         remarks: ''
     });
 
-    const fetchProducts = async () => {
+    const fetchProducts = async (currentPage = 1, searchQuery = '') => {
         try {
             setLoading(true);
-            const response = await client.get('/inventory/');
+            const skip = (currentPage - 1) * limit;
+            const params = { skip, limit };
+            if (searchQuery) params.search = searchQuery;
+            const response = await client.get('/inventory/', { params });
             setProducts(response.data.data);
+            setTotalCount(response.data.total);
+            setTotalPages(Math.ceil(response.data.total / limit));
             setError(null);
         } catch (err) {
             setError('Failed to fetch products');
@@ -35,8 +54,9 @@ const StoreRoom = () => {
     };
 
     useEffect(() => {
-        fetchProducts();
-    }, []);
+        const timer = setTimeout(() => fetchProducts(page, search), 400);
+        return () => clearTimeout(timer);
+    }, [page, search]);
 
     const openStockModal = (product, defaultType = 'move_to_shop') => {
         setSelectedProduct(product);
@@ -70,10 +90,6 @@ const StoreRoom = () => {
         : 'border-slate-300 text-slate-900 focus:ring-indigo-500 focus:border-indigo-500';
 
     const filteredProducts = products
-        .filter(p =>
-            p.name.toLowerCase().includes(search.toLowerCase()) ||
-            p.sku?.toLowerCase().includes(search.toLowerCase())
-        )
         .sort((a, b) => sortOrder === 'az'
             ? a.name.localeCompare(b.name)
             : b.name.localeCompare(a.name)
@@ -217,6 +233,59 @@ const StoreRoom = () => {
                             )}
                         </tbody>
                     </table>
+                </div>
+
+                <div className={`flex items-center justify-between border-t px-4 py-3 sm:px-6 ${darkMode ? 'border-gray-800 bg-gray-900' : 'border-slate-200 bg-slate-50'}`}>
+                    <div className="flex flex-1 justify-between sm:hidden">
+                        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm">Previous</button>
+                        <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm">Next</button>
+                    </div>
+                    <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                        <div>
+                            <p className={`text-sm ${textSecondary}`}>
+                                Showing <span className="font-medium">{(page - 1) * limit + 1}</span> to <span className="font-medium">{Math.min(page * limit, totalCount)}</span> of <span className="font-medium">{totalCount.toLocaleString()}</span> products
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                                <button
+                                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                                    disabled={page === 1}
+                                    className={`relative inline-flex items-center rounded-l-md px-2 py-2 border ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50' } disabled:opacity-50 transition-colors`}
+                                >
+                                    Previous
+                                </button>
+                                <span className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold border ${darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white text-gray-900 border-gray-300'}`}>
+                                     Page {page} of {totalPages}
+                                </span>
+                                <button
+                                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={page === totalPages}
+                                    className={`relative inline-flex items-center rounded-r-md px-2 py-2 border ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50' } disabled:opacity-50 transition-colors`}
+                                >
+                                    Next
+                                </button>
+                            </nav>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max={totalPages}
+                                    value={jumpInput}
+                                    onChange={(e) => setJumpInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleJump()}
+                                    placeholder="Jump to..."
+                                    className={`w-24 px-2 py-1.5 border rounded-md text-sm text-center ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-600' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'} focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                                />
+                                <button
+                                    onClick={handleJump}
+                                    className="px-3 py-1.5 text-sm font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                                >
+                                    Go
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

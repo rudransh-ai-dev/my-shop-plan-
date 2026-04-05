@@ -13,7 +13,16 @@ const Inventory = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [jumpInput, setJumpInput] = useState('');
   const limit = 50;
+
+  const handleJump = () => {
+    const p = parseInt(jumpInput, 10);
+    if (!isNaN(p) && p >= 1 && p <= totalPages) {
+      setPage(p);
+      setJumpInput('');
+    }
+  };
 
   const fetchProducts = async (currentPage = 1, searchQuery = '') => {
     try {
@@ -125,6 +134,45 @@ const Inventory = () => {
               <p className={`text-sm ${textSecondary}`}>
                 Showing <span className="font-medium">{(page - 1) * limit + 1}</span> to <span className="font-medium">{Math.min(page * limit, totalCount)}</span> of <span className="font-medium">{totalCount.toLocaleString()}</span> products
               </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className={`relative inline-flex items-center rounded-l-md px-2 py-2 border ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50' } disabled:opacity-50 transition-colors`}
+                >
+                  Previous
+                </button>
+                <span className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold border ${darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white text-gray-900 border-gray-300'}`}>
+                   Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className={`relative inline-flex items-center rounded-r-md px-2 py-2 border ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50' } disabled:opacity-50 transition-colors`}
+                >
+                  Next
+                </button>
+              </nav>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max={totalPages}
+                  value={jumpInput}
+                  onChange={(e) => setJumpInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleJump()}
+                  placeholder="Jump to..."
+                  className={`w-24 px-2 py-1.5 border rounded-md text-sm text-center ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-600' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'} focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                />
+                <button
+                  onClick={handleJump}
+                  className="px-3 py-1.5 text-sm font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                >
+                  Go
+                </button>
+              </div>
             </div>
           </div>
         </div>

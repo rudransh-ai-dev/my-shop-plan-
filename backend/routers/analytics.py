@@ -55,6 +55,23 @@ import requests
 class ChatMessage(BaseModel):
     message: str
 
+# --- IOT: DEVICE MANAGEMENT & SENSOR SIMULATION ---
+
+@router.get("/iot-device-health")
+def get_iot_device_health():
+    """Returns simulated health status for IoT sensor mesh devices."""
+    return IoTService.get_device_health()
+
+@router.get("/iot-simulate-reading/{sku}")
+def simulate_iot_reading(sku: str, db: Session = Depends(get_db), company_id: int = Depends(get_company_id)):
+    """Simulates a weight/RFID sensor reading for a given product SKU."""
+    return IoTService.simulate_sensor_reading(sku)
+
+@router.post("/iot-sync-stock")
+def sync_iot_stock(sku: str, quantity: int, db: Session = Depends(get_db), company_id: int = Depends(get_company_id)):
+    """Pushes a sensor reading to the ERP inventory database."""
+    return IoTService.push_sensor_to_inventory(db, company_id, sku, quantity)
+
 @router.post("/chat")
 def ai_chat(msg: ChatMessage, db: Session = Depends(get_db)):
     """Smart assistant for business insights using Ollama with a fail-safe fallback."""
@@ -101,7 +118,7 @@ LIVE ERP DATA CONTEXT:
         res = requests.post(
             "http://localhost:11434/api/generate",
             json={
-                "model": "llama3:8b", 
+                "model": "llama3.1:latest", 
                 "prompt": full_prompt, 
                 "stream": False,
                 "options": {

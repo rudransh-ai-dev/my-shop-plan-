@@ -139,7 +139,7 @@ const Reports = () => {
                     </h3>
                     <div className="h-72">
                         {metrics.top_products && metrics.top_products.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                 <BarChart data={metrics.top_products} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
                                     <XAxis dataKey="name" tick={{fill: chartTextColor, fontSize: 12}} axisLine={false} tickLine={false} />
@@ -169,7 +169,7 @@ const Reports = () => {
                     </h3>
                     <div className="h-72">
                         {gstData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                 <PieChart>
                                     <Pie data={gstData} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value">
                                         {gstData.map((entry, index) => (

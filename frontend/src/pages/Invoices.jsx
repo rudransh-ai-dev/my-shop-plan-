@@ -14,7 +14,16 @@ const Orders = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [jumpInput, setJumpInput] = useState('');
   const limit = 50;
+
+  const handleJump = () => {
+    const p = parseInt(jumpInput, 10);
+    if (!isNaN(p) && p >= 1 && p <= totalPages) {
+      setPage(p);
+      setJumpInput('');
+    }
+  };
 
   const fetchOrders = async (currentPage = 1, searchQuery = '') => {
     try {
@@ -159,7 +168,7 @@ const Orders = () => {
                 Showing <span className="font-medium">{(page - 1) * limit + 1}</span> to <span className="font-medium">{Math.min(page * limit, totalCount)}</span> of <span className="font-medium">{totalCount.toLocaleString()}</span> results
               </p>
             </div>
-            <div>
+            <div className="flex items-center gap-3">
               <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -181,6 +190,24 @@ const Orders = () => {
                   →
                 </button>
               </nav>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max={totalPages}
+                  value={jumpInput}
+                  onChange={(e) => setJumpInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleJump()}
+                  placeholder="Jump to..."
+                  className={`w-24 px-2 py-1.5 border rounded-md text-sm text-center ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-600' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'} focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                />
+                <button
+                  onClick={handleJump}
+                  className="px-3 py-1.5 text-sm font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                >
+                  Go
+                </button>
+              </div>
             </div>
           </div>
         </div>

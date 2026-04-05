@@ -66,8 +66,19 @@ class OrderResponse(BaseModel):
     customer: CustomerResponse
     items: List[OrderItemResponse]
 
+class OrderListItem(BaseModel):
+    id: int
+    order_id: str
+    customer_name: str
+    customer_region: str
+    order_date: str
+    ship_mode: str
+    total_sales: float
+    total_profit: float
+    item_count: int
+
 class PaginatedOrders(BaseModel):
     total: int
     page: int
     size: int
-    data: List[OrderResponse]
+    data: List[OrderListItem]

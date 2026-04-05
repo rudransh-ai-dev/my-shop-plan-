@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Moon, Sun, Clock } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
-const Header = () => {
+const Header = ({ sidebarCollapsed }) => {
     const { darkMode, toggleDarkMode } = useTheme();
     const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -32,26 +33,31 @@ const Header = () => {
     };
 
     return (
-        <header className={`sticky top-0 z-10 flex h-16 flex-shrink-0 shadow-sm border-b transition-colors duration-300 ${
-            darkMode
-                ? 'bg-gray-900 border-gray-800'
-                : 'bg-white border-gray-100'
-        }`}>
+        <header
+            className={`sticky top-0 z-10 w-full flex h-16 flex-shrink-0 shadow-sm border-b transition-colors duration-300 ${
+                darkMode
+                    ? 'bg-gray-900/80 border-gray-800 backdrop-blur-xl'
+                    : 'bg-white/80 border-gray-100 backdrop-blur-xl'
+            }`}
+        >
             <div className="flex flex-1 items-center justify-between px-4 sm:px-6 lg:px-8">
-                {/* Live Clock Section */}
                 <div className="flex items-center gap-3">
-                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
-                        darkMode
-                            ? 'bg-indigo-500/10 border border-indigo-500/20'
-                            : 'bg-indigo-50 border border-indigo-100'
-                    }`}>
+                    <motion.div
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+                            darkMode
+                                ? 'bg-indigo-500/10 border border-indigo-500/20'
+                                : 'bg-indigo-50 border border-indigo-100'
+                        }`}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
                         <Clock className={`h-4 w-4 ${darkMode ? 'text-indigo-400' : 'text-indigo-500'}`} />
                         <span className={`text-sm font-mono font-semibold tracking-wide ${
                             darkMode ? 'text-indigo-300' : 'text-indigo-700'
                         }`}>
                             {formatTime(currentTime)}
                         </span>
-                    </div>
+                    </motion.div>
                     <div className={`hidden sm:block text-sm font-medium ${
                         darkMode ? 'text-gray-400' : 'text-gray-500'
                     }`}>
@@ -59,29 +65,28 @@ const Header = () => {
                     </div>
                 </div>
 
-                {/* Dark Mode Toggle */}
                 <div className="flex items-center">
-                    <button
+                    <motion.button
                         onClick={toggleDarkMode}
                         className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
                             darkMode
                                 ? 'bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20'
                                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
                         }`}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.9 }}
                         title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                     >
-                        {darkMode ? (
-                            <>
-                                <Sun className="h-4 w-4" />
-                                <span className="hidden sm:inline">Light</span>
-                            </>
-                        ) : (
-                            <>
-                                <Moon className="h-4 w-4" />
-                                <span className="hidden sm:inline">Dark</span>
-                            </>
-                        )}
-                    </button>
+                        <motion.div
+                            key={darkMode ? 'moon' : 'sun'}
+                            initial={{ rotate: -90, opacity: 0 }}
+                            animate={{ rotate: 0, opacity: 1 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                        >
+                            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                        </motion.div>
+                        <span className="hidden sm:inline">{darkMode ? 'Light' : 'Dark'}</span>
+                    </motion.button>
                 </div>
             </div>
         </header>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { IndianRupee, TrendingUp, Package, AlertCircle, TrendingDown, Target, Calendar } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
@@ -6,6 +7,24 @@ import {
 } from 'recharts';
 import client from '../api/client';
 import { useTheme } from '../context/ThemeContext';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.15 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 200, damping: 25 } },
+};
+
+const chartVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 200, damping: 25 } },
+};
 
 const FILTER_OPTIONS = [
   { label: 'All Time', value: 'all' },
@@ -81,10 +100,12 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="pb-8">
+    <motion.div className="pb-8" variants={containerVariants} initial="hidden" animate="visible">
       {/* Header */}
-      <div className="md:flex md:items-center md:justify-between pb-6 border-b mb-8 transition-colors duration-300 flex-wrap gap-4"
-        style={{ borderColor: darkMode ? '#1e293b' : '#e2e8f0' }}>
+      <motion.div className="md:flex md:items-center md:justify-between pb-6 border-b mb-8 transition-colors duration-300 flex-wrap gap-4"
+        style={{ borderColor: darkMode ? '#1e293b' : '#e2e8f0' }}
+        variants={itemVariants}
+      >
         <div className="flex-1 min-w-0">
           <h2 className={`text-2xl font-bold leading-7 sm:text-3xl sm:truncate ${textPrimary}`}>
             Executive Dashboard
@@ -96,9 +117,11 @@ const Dashboard = () => {
         {/* Filter Controls */}
         <div className="flex items-center gap-2 flex-wrap">
           {FILTER_OPTIONS.map(opt => (
-            <button 
+            <motion.button 
               key={opt.value} 
               onClick={() => setFilterMode(opt.value)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                 filterMode === opt.value 
                   ? 'bg-indigo-600 border-indigo-600 text-white' 
@@ -107,7 +130,7 @@ const Dashboard = () => {
             >
               <Calendar className="h-3 w-3" />
               {opt.label}
-            </button>
+            </motion.button>
           ))}
           {filterMode === 'custom' && (
             <div className="flex items-center gap-2 mt-2 sm:mt-0">
@@ -119,58 +142,46 @@ const Dashboard = () => {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {error && (
-        <div className="mb-8 bg-red-500/10 border border-red-500/20 p-4 rounded-xl flex items-center text-red-500">
+        <motion.div className="mb-8 bg-red-500/10 border border-red-500/20 p-4 rounded-xl flex items-center text-red-500"
+          variants={itemVariants}
+        >
           <AlertCircle className="h-5 w-5 mr-2" />
           {error}
-        </div>
+        </motion.div>
       )}
 
       {/* Top KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-        <div className={cardClass}>
-          <div className="flex items-center justify-between mb-3">
-            <p className={`text-xs font-semibold uppercase tracking-wider ${textSecondary}`}>Total Sales (Lifetime)</p>
-            <div className="p-2 rounded-lg bg-emerald-500/10">
-              <TrendingUp className="h-5 w-5 text-emerald-500" />
+        {[
+          { label: 'Total Sales (Lifetime)', value: `₹${(metrics.total_sales || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, icon: TrendingUp, iconColor: 'text-emerald-500', iconBg: 'bg-emerald-500/10' },
+          { label: 'Total Profit', value: `₹${(metrics.total_profit || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, icon: IndianRupee, iconColor: 'text-indigo-500', iconBg: 'bg-indigo-500/10' },
+          { label: 'Average Discount Given', value: `${(metrics.avg_discount * 100 || 0).toFixed(1)}%`, icon: Target, iconColor: 'text-amber-500', iconBg: 'bg-amber-500/10' },
+        ].map((card, i) => (
+          <motion.div key={i} className={cardClass} variants={itemVariants} whileHover={{ y: -4, boxShadow: '0 12px 24px -8px rgba(0,0,0,0.15)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <p className={`text-xs font-semibold uppercase tracking-wider ${textSecondary}`}>{card.label}</p>
+              <div className={`p-2 rounded-lg ${card.iconBg}`}>
+                <card.icon className={`h-5 w-5 ${card.iconColor}`} />
+              </div>
             </div>
-          </div>
-          <p className={`text-3xl font-bold ${textPrimary}`}>₹{(metrics.total_sales || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-        </div>
-
-        <div className={cardClass}>
-          <div className="flex items-center justify-between mb-3">
-            <p className={`text-xs font-semibold uppercase tracking-wider ${textSecondary}`}>Total Profit</p>
-            <div className="p-2 rounded-lg bg-indigo-500/10">
-              <IndianRupee className="h-5 w-5 text-indigo-500" />
-            </div>
-          </div>
-          <p className={`text-3xl font-bold ${textPrimary}`}>₹{(metrics.total_profit || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-        </div>
-
-        <div className={cardClass}>
-          <div className="flex items-center justify-between mb-3">
-            <p className={`text-xs font-semibold uppercase tracking-wider ${textSecondary}`}>Average Discount Given</p>
-            <div className="p-2 rounded-lg bg-amber-500/10">
-              <Target className="h-5 w-5 text-amber-500" />
-            </div>
-          </div>
-          <p className={`text-3xl font-bold ${textPrimary}`}>{(metrics.avg_discount * 100 || 0).toFixed(1)}%</p>
-        </div>
+            <p className={`text-3xl font-bold ${textPrimary}`}>{card.value}</p>
+          </motion.div>
+        ))}
       </div>
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Sales by Region */}
-        <div className={cardClass}>
+        <motion.div className={cardClass} variants={chartVariants}>
           <h3 className={`text-lg font-bold mb-6 pb-4 border-b ${textPrimary}`}
             style={{ borderColor: darkMode ? '#1e293b' : '#f1f5f9' }}>
             Revenue by Region
           </h3>
           <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <BarChart data={metrics.sales_by_region} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
                 <XAxis dataKey="name" tick={{ fill: chartTextColor, fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -188,16 +199,16 @@ const Dashboard = () => {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </motion.div>
 
         {/* Customer Segments */}
-        <div className={cardClass}>
+        <motion.div className={cardClass} variants={chartVariants}>
           <h3 className={`text-lg font-bold mb-6 pb-4 border-b ${textPrimary}`}
             style={{ borderColor: darkMode ? '#1e293b' : '#f1f5f9' }}>
             Sales by Customer Segment
           </h3>
           <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie
                   data={metrics.sales_by_segment}
@@ -220,18 +231,18 @@ const Dashboard = () => {
               </PieChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 gap-6">
+      <motion.div className="grid grid-cols-1 gap-6" variants={chartVariants}>
         <div className={cardClass}>
           <h3 className={`text-lg font-bold mb-6 pb-4 border-b ${textPrimary}`}
             style={{ borderColor: darkMode ? '#1e293b' : '#f1f5f9' }}>
             Most Profitable Product Categories
           </h3>
           <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <BarChart layout="vertical" data={metrics.top_categories} margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={chartGridColor} />
                 <XAxis type="number" tick={{ fill: chartTextColor, fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -250,8 +261,8 @@ const Dashboard = () => {
             </ResponsiveContainer>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
