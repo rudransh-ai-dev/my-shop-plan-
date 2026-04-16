@@ -1,99 +1,126 @@
-# 🚀 BusinessHub ERP — High-Performance AI-Driven Enterprise Suite
+# BusinessHub ERP — AI-Driven Enterprise Resource Planning Suite
 
-[![Tech Stack](https://img.shields.io/badge/Stack-FastAPI%20%7C%20React%20%7C%20PostgreSQL-blue)](https://github.com/rudransh-ai-dev)
-[![AI Engine](https://img.shields.io/badge/AI-Ollama%20LLaMA3.1-orange)](https://ollama.ai)
-[![Database](https://img.shields.io/badge/Database-6M%2B%20Records-green)](https://www.postgresql.org/)
+![Tech Stack](https://img.shields.io/badge/Stack-FastAPI%20%7C%20React%20%7C%20PostgreSQL-blue)
+![AI Engine](https://img.shields.io/badge/AI-Ollama%20LLaMA3.1%3A8B-orange)
+![Database](https://img.shields.io/badge/Database-100K%2B%20Records-green)
 
-> **BusinessHub** is a next-generation Enterprise Resource Planning (ERP) platform designed for massive scale. Unlike traditional small-scale projects, BusinessHub is engineered to handle millions of transactions with sub-50ms response times, integrated with a local LLM for real-time business intelligence.
-
----
-
-## 🔥 What Makes This Special?
-
-- **🚀 2,500x Query Optimization**: Custom-tuned PostgreSQL indexing (Composite B-Tree & GIN) that dropped query times for 5 million records from **106ms to 0.04ms**.
-- **🤖 Local-AI Assistant**: A built-in ChatGPT-style business analyst powered by **Llama3.1:latest** via Ollama. It reads your live revenue, stock, and GST data to give you instant strategic advice.
-- **⚖️ Real-Time GST Engine**: Automated Indian Tax compliance (CGST/SGST/IGST) with HSN-code mapping and monthly tax liability auditing.
-- **📦 Dual-Layer Inventory**: Professional-grade stock management separating "Shop Shelf" from "Store Room" with automated restocking triggers.
-- **🌐 IoT Integration**: Connects with live hardware/sensors via HTTP routes, converting real-time stock-shelf weight into software-rendered analytics.
-- **🔐 Cyber Security Dashboards**: Proactive Threat Detection and Cryptographic hashing auditing right inside the application.
+> **BusinessHub** is a next-generation ERP platform designed for retail businesses. It handles orders, inventory, customers, and provides AI-powered business insights using a local LLM.
 
 ---
 
-## 🛠️ Technology Stack
+## Features
+
+- **Dashboard Analytics** — Sales, profit, regional performance, monthly trends
+- **Dual-Layer Inventory** — Shop shelf and store room stock management
+- **Order Management** — Full order lifecycle tracking
+- **AI Business Assistant** — Chat with your data using Ollama Llama3.1:8B
+- **Inventory Optimization** — ML-based stock recommendations
+- **Anomaly Detection** — Z-Score based transaction outlier detection
+- **Dark/Light Mode** — Modern responsive UI
+
+---
+
+## Tech Stack
 
 | Component | Technology |
-| :--- | :--- |
-| **Backend** | Python 3.12, FastAPI, SQLAlchemy (ORM), Pydantic v2 |
-| **Frontend** | React 18, Vite, Tailwind CSS, Framer Motion, Recharts |
-| **Database** | PostgreSQL 15 |
-| **AI / LLM** | Ollama (Llama3.1-8B), Requests, Prompt Engineering |
-| **Design** | Modern Glassmorphism, Dynamic Micro-Animations, Real-time dark mode |
+|-----------|------------|
+| **Backend** | Python 3.12, FastAPI, SQLAlchemy, Pydantic v2 |
+| **Frontend** | React 18, Vite, Tailwind CSS, Recharts |
+| **Database** | PostgreSQL |
+| **AI** | Ollama (Llama3.1:8B) |
 
 ---
 
-## 🗄️ Demo Data & Environment Enhancements
+## Quick Start
 
-To make the application functionally vibrant, the database has been primed with realistic data for the Dashboard:
+### Prerequisites
+- PostgreSQL (Port 5432)
+- Node.js v22+
+- Python 3.12
+- Ollama (for AI features)
 
-- **Robust Accounts**: Auto-generated Administrative SQL account bypassing dependency hashing issues.
-- **Full Ledger System**: **480 randomized Indian orders** spread across current Year & Month, populating dynamic Recharts graphs.
-- **Product Ecosystem**: 15 distinct products across 7 categories (Technology, Furniture, Clothing, Food).
-- **Responsive Layouts**: Fixed UX styling involving the Global Navigation Header layout overlaps and Recharts responsive container tracking.
+### Start Application
 
----
-
-## 🚀 Quick Start Guide
-
-### 1. Prerequisites
-> 🐧 **Note on Environment:** This project was developed and explicitly tested on **Linux Pop!_OS**. Windows users may want to utilize WSL2 to closely match the terminal startup commands.
-
-- **PostgreSQL** (Port 5432)
-- **Node.js** (v22+)
-- **Python** (v3.12)
-- **Ollama** (For AI features)
-
-### 2. Database Environment Setup
-Make sure you have PostgreSQL running, and a database named `businesshub` ready with password `password`:
 ```bash
-psql -h localhost -p 5432 -U postgres -c "CREATE DATABASE businesshub;"
+./start.sh
 ```
 
-### 3. Backend (FastAPI) Setup
-The backend schema handles custom Table structures and data generation automatically.
+This will:
+1. Start PostgreSQL
+2. Create virtual environment & install dependencies
+3. Setup database tables
+4. Start backend on port 8000
+5. Start frontend on port 5173
+
+**Login**: `admin@businesshub.com` / `admin123`
+
+---
+
+## Data
+
+The database contains realistic Indian retail data spanning **2019-2026**:
+- 100,000+ customers
+- 100,000+ products across 6 categories
+- 100,000+ orders
+- Store room inventory with realistic stock levels
+
+### Generate Fake Data
+
+To add more test data:
 ```bash
 cd backend
-python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
-python migrate_csv.py  # (Builds SQL Schema + Admin user + Stock items)
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### 4. Frontend (React) Setup
-```bash
-cd frontend
-nvm use 22
-npm install
-npm run dev
-```
-Navigate to: **http://localhost:5174**  
-Login: `admin@businesshub.com` / `admin123`
-
-### 5. AI Assistant Setup (Optional but recommended)
-Launch the local LLM to enable the Business Intelligence chat in your ERP:
-```bash
-ollama pull llama3.1
-ollama run llama3.1
+python generate_fake_data.py
 ```
 
 ---
 
-## 🔒 Security & Compliance
-- **JWT Authentication**: Secure stateless user sessions.
-- **PII Hashing**: Sensitive customer data is never stored in plain text.
-- **Intrusion Detection**: Detects and alerts Brute Force IPs across the company network instances.
-- **Audit Trails**: Non-repudiation security logs for all critical stock movements.
+## AI Setup (Optional)
+
+To enable AI insights:
+
+```bash
+ollama pull llama3.1:8b
+ollama serve
+```
+
+The AI assistant will answer questions about your actual data range (2019-2026) and won't hallucinate information.
 
 ---
 
-Built for Speed. Engineered for Intelligence. **BusinessHub ERP.**
+## Project Structure
+
+```
+├── backend/
+│   ├── main.py           # FastAPI app entry
+│   ├── models.py         # SQLAlchemy models
+│   ├── routers/          # API endpoints
+│   │   ├── dashboard.py  # Dashboard metrics
+│   │   ├── inventory.py  # Inventory management
+│   │   ├── orders.py     # Order management
+│   │   └── analytics.py  # AI & analytics
+│   └── services/         # Business logic
+├── frontend/
+│   └── src/
+│       ├── pages/        # React pages
+│       └── components/   # UI components
+├── start.sh              # One-command startup
+└── README.md
+```
+
+---
+
+## API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /api/v1/auth/login` | User login |
+| `GET /api/v1/dashboard/metrics` | Dashboard data |
+| `GET /api/v1/inventory/` | Product list |
+| `GET /api/v1/inventory/summary` | Inventory summary |
+| `GET /api/v1/orders/` | Order list |
+| `POST /api/v1/analytics/chat` | AI assistant |
+
+---
+
+Built for Intelligence. Designed for Business. **BusinessHub ERP.**

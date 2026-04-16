@@ -6,6 +6,20 @@ from backend.models import Product, OrderItem
 
 router = APIRouter()
 
+@router.get("/summary")
+def get_inventory_summary(db: Session = Depends(get_db)):
+    total_products = db.query(func.count(Product.id)).filter(Product.is_active == True).scalar()
+    total_store_room = db.query(func.sum(Product.store_room_stock)).filter(Product.is_active == True).scalar() or 0
+    products_with_stock = db.query(func.count(Product.id)).filter(
+        Product.is_active == True,
+        Product.store_room_stock > 0
+    ).scalar()
+    return {
+        "total_products": total_products,
+        "total_store_room_items": int(total_store_room),
+        "products_with_store_stock": products_with_stock
+    }
+
 @router.get("/")
 def list_products(
     skip: int = Query(0, description="Pagination offset"),

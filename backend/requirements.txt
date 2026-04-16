@@ -21,3 +21,4 @@ pandas
 scikit-learn
 statsmodels
 matplotlib
+requests

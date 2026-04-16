@@ -7,7 +7,7 @@ from backend.database import engine, Base
 from sqlalchemy import text
 import backend.models
 
-CSV_PATH = "/home/rudransh/Projects /My shop plan /indian store data/store_sales_data.csv"
+CSV_PATH = "/home/rudra/ai_ml_projects/my-shop-plan/indian store data/store_sales_data.csv"
 
 def run_migration():
     print("Dropping old schema...")

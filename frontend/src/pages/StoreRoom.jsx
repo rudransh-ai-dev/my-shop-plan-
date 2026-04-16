@@ -14,8 +14,20 @@ const StoreRoom = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
+    const [summary, setSummary] = useState({ total_products: 0, total_store_room_items: 0, products_with_store_stock: 0 });
     const [jumpInput, setJumpInput] = useState('');
     const limit = 50;
+
+    const fetchSummary = async () => {
+        try {
+            const response = await client.get('/inventory/summary');
+            setSummary(response.data);
+            setTotalCount(response.data.total_products);
+            setTotalPages(Math.ceil(response.data.total_products / limit));
+        } catch (err) {
+            console.error('Failed to fetch summary', err);
+        }
+    };
 
     const handleJump = () => {
         const p = parseInt(jumpInput, 10);
@@ -52,6 +64,10 @@ const StoreRoom = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchSummary();
+    }, []);
 
     useEffect(() => {
         const timer = setTimeout(() => fetchProducts(page, search), 400);
@@ -95,9 +111,6 @@ const StoreRoom = () => {
             : b.name.localeCompare(a.name)
         );
 
-    const totalStoreRoomItems = products.reduce((sum, p) => sum + (p.store_room_stock || 0), 0);
-    const productsInStoreRoom = products.filter(p => (p.store_room_stock || 0) > 0).length;
-
     return (
         <div className="relative pb-8">
             <div className={`md:flex md:items-center md:justify-between pb-6 border-b mb-8`}
@@ -124,15 +137,15 @@ const StoreRoom = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
                 <div className={`rounded-xl shadow-sm border p-5 ${cardClass}`}>
                     <p className={`text-xs font-semibold uppercase tracking-wider ${textSecondary}`}>Total Items in Store Room</p>
-                    <p className={`text-3xl font-bold mt-2 ${textPrimary}`}>{totalStoreRoomItems}</p>
+                    <p className={`text-3xl font-bold mt-2 ${textPrimary}`}>{summary.total_store_room_items.toLocaleString()}</p>
                 </div>
                 <div className={`rounded-xl shadow-sm border p-5 ${cardClass}`}>
                     <p className={`text-xs font-semibold uppercase tracking-wider ${textSecondary}`}>Products with Store Stock</p>
-                    <p className={`text-3xl font-bold mt-2 ${textPrimary}`}>{productsInStoreRoom}</p>
+                    <p className={`text-3xl font-bold mt-2 ${textPrimary}`}>{summary.products_with_store_stock.toLocaleString()}</p>
                 </div>
                 <div className={`rounded-xl shadow-sm border p-5 ${cardClass}`}>
                     <p className={`text-xs font-semibold uppercase tracking-wider ${textSecondary}`}>Total Products</p>
-                    <p className={`text-3xl font-bold mt-2 ${textPrimary}`}>{products.length}</p>
+                    <p className={`text-3xl font-bold mt-2 ${textPrimary}`}>{summary.total_products.toLocaleString()}</p>
                 </div>
             </div>
 

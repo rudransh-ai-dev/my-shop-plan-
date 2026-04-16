@@ -180,8 +180,8 @@ const Dashboard = () => {
             style={{ borderColor: darkMode ? '#1e293b' : '#f1f5f9' }}>
             Revenue by Region
           </h3>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+          <div className="h-72 min-h-[1px] min-w-[1px] overflow-hidden">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={metrics.sales_by_region} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
                 <XAxis dataKey="name" tick={{ fill: chartTextColor, fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -207,8 +207,8 @@ const Dashboard = () => {
             style={{ borderColor: darkMode ? '#1e293b' : '#f1f5f9' }}>
             Sales by Customer Segment
           </h3>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+          <div className="h-72 min-h-[1px] min-w-[1px] overflow-hidden">
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={metrics.sales_by_segment}
@@ -241,8 +241,8 @@ const Dashboard = () => {
             style={{ borderColor: darkMode ? '#1e293b' : '#f1f5f9' }}>
             Most Profitable Product Categories
           </h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+          <div className="h-80 min-h-[1px] min-w-[1px] overflow-hidden">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart layout="vertical" data={metrics.top_categories} margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={chartGridColor} />
                 <XAxis type="number" tick={{ fill: chartTextColor, fontSize: 12 }} axisLine={false} tickLine={false} />
